@@ -86,7 +86,9 @@
       "depends_on": [
         "US-002"
       ],
-      "notes": "Required for metric aggregation and mapping."
+      "notes": "Required for metric aggregation and mapping.",
+      "status": "in_progress",
+      "claimed_by": "worker-3"
     },
     {
       "id": "US-006",
