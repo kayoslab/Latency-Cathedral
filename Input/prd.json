@@ -32,7 +32,9 @@
       "depends_on": [
         "US-001"
       ],
-      "notes": "Required by most later engineering tickets."
+      "notes": "Required by most later engineering tickets.",
+      "status": "in_progress",
+      "claimed_by": "worker-2"
     },
     {
       "id": "US-003",
@@ -45,11 +47,12 @@
         "No page scrollbars on normal desktop resolution"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "depends_on": [
         "US-001"
       ],
-      "notes": "Required before renderer setup."
+      "notes": "Required before renderer setup.",
+      "status": "pass"
     },
     {
       "id": "US-004",
