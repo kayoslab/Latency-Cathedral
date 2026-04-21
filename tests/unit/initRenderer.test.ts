@@ -4,49 +4,65 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 // Mock three.js — we only care about the dispose contract, not WebGL internals.
 // jsdom has no WebGL context, so we must mock the constructors.
 vi.mock('three', () => {
-  const Color = vi.fn();
+  const Color = vi.fn(function Color() {});
 
-  const WebGLRenderer = vi.fn().mockImplementation(() => ({
-    setPixelRatio: vi.fn(),
-    setSize: vi.fn(),
-    render: vi.fn(),
-    dispose: vi.fn(),
-    domElement: document.createElement('canvas'),
-  }));
+  const WebGLRenderer = vi.fn(function WebGLRenderer() {
+    return {
+      setPixelRatio: vi.fn(),
+      setSize: vi.fn(),
+      render: vi.fn(),
+      dispose: vi.fn(),
+      domElement: document.createElement('canvas'),
+    };
+  });
 
-  const Scene = vi.fn().mockImplementation(() => ({
-    add: vi.fn(),
-    background: null,
-  }));
+  const Scene = vi.fn(function Scene() {
+    return {
+      add: vi.fn(),
+      background: null,
+    };
+  });
 
-  const PerspectiveCamera = vi.fn().mockImplementation(() => ({
-    position: { set: vi.fn(), z: 0 },
-    aspect: 1,
-    updateProjectionMatrix: vi.fn(),
-  }));
+  const PerspectiveCamera = vi.fn(function PerspectiveCamera() {
+    return {
+      position: { set: vi.fn(), z: 0 },
+      aspect: 1,
+      updateProjectionMatrix: vi.fn(),
+    };
+  });
 
-  const AmbientLight = vi.fn().mockImplementation(() => ({
-    isLight: true,
-  }));
+  const AmbientLight = vi.fn(function AmbientLight() {
+    return {
+      isLight: true,
+    };
+  });
 
-  const DirectionalLight = vi.fn().mockImplementation(() => ({
-    position: { set: vi.fn() },
-    isLight: true,
-  }));
+  const DirectionalLight = vi.fn(function DirectionalLight() {
+    return {
+      position: { set: vi.fn() },
+      isLight: true,
+    };
+  });
 
-  const BoxGeometry = vi.fn().mockImplementation(() => ({
-    dispose: vi.fn(),
-  }));
+  const BoxGeometry = vi.fn(function BoxGeometry() {
+    return {
+      dispose: vi.fn(),
+    };
+  });
 
-  const MeshStandardMaterial = vi.fn().mockImplementation(() => ({
-    dispose: vi.fn(),
-  }));
+  const MeshStandardMaterial = vi.fn(function MeshStandardMaterial() {
+    return {
+      dispose: vi.fn(),
+    };
+  });
 
-  const Mesh = vi.fn().mockImplementation(() => ({
-    rotation: { x: 0, y: 0 },
-    geometry: new BoxGeometry(),
-    material: new MeshStandardMaterial(),
-  }));
+  const Mesh = vi.fn(function Mesh(geometry: unknown, material: unknown) {
+    return {
+      rotation: { x: 0, y: 0 },
+      geometry,
+      material,
+    };
+  });
 
   return {
     Color,

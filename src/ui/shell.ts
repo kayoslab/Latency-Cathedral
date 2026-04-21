@@ -16,13 +16,5 @@ export function initShell(): Shell {
   }
   const overlay: HTMLDivElement = overlayEl;
 
-  function resize() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-  }
-
-  resize();
-  window.addEventListener('resize', resize);
-
   return { canvas, overlay };
 }

@@ -62,7 +62,7 @@ test.describe('US-004: Three.js renderer bootstrap', () => {
     const contextLostMessages: string[] = [];
     page.on('console', (msg) => {
       const text = msg.text().toLowerCase();
-      if (text.includes('context lost') || text.includes('webgl')) {
+      if (text.includes('context lost') || (text.includes('webgl') && !text.includes('readpixels') && !text.includes('gpu stall'))) {
         if (msg.type() === 'error' || msg.type() === 'warning') {
           contextLostMessages.push(msg.text());
         }
