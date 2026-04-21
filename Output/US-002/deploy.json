@@ -1,0 +1,1 @@
+{"decision":"pass","gates_checked":["lint","typecheck","tests"],"failures":[],"notes":"All gates pass. `npm run lint` exits clean, `npm run typecheck` (tsc --noEmit) reports no errors, `npm run test` (vitest run) passes 50 tests across 5 test files in 2.11s. Sample unit tests exercising pure functions (e.g. clampPixelRatio) are present and passing."}
