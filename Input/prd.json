@@ -14,7 +14,9 @@
       "priority": 1,
       "passes": false,
       "depends_on": [],
-      "notes": "Foundation ticket."
+      "notes": "Foundation ticket.",
+      "status": "in_progress",
+      "claimed_by": "worker-3"
     },
     {
       "id": "US-002",
@@ -276,6 +278,7 @@
       "priority": 2,
       "passes": false,
       "depends_on": [
+        "US-006",
         "US-011",
         "US-014"
       ],
