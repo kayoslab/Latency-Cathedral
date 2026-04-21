@@ -1,1 +1,6 @@
-LOCK*
+node_modules/
+dist/
+coverage/
+test-results/
+playwright-report/
+.vite/
