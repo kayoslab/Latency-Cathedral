@@ -4,3 +4,5 @@
 
 ## US-004: Bootstrap three.js renderer
 
+## US-002: Add linting, typecheck, and unit test scripts
+

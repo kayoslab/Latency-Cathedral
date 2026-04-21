@@ -28,13 +28,12 @@
         "A sample unit test passes"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "depends_on": [
         "US-001"
       ],
       "notes": "Required by most later engineering tickets.",
-      "status": "in_progress",
-      "claimed_by": "worker-1"
+      "status": "pass"
     },
     {
       "id": "US-003",
