@@ -1,0 +1,1 @@
+{"test_results":"pass","failures":[],"tests_added":["tests/unit/clampPixelRatio.test.ts","tests/unit/initRenderer.test.ts","tests/e2e/renderer.spec.ts"],"tests_modified":["tests/unit/shell.test.ts"]}
