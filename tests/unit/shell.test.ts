@@ -45,23 +45,26 @@ describe('US-003: initShell()', () => {
     expect(shell.overlay.id).toBe('overlay');
   });
 
-  it('sizes the canvas to window dimensions', () => {
+  it('does not set canvas dimensions (renderer owns sizing)', () => {
     const shell = initShell();
 
-    expect(shell.canvas.width).toBe(1280);
-    expect(shell.canvas.height).toBe(720);
+    // Shell should NOT set canvas width/height — the renderer controls sizing
+    // via renderer.setSize(). Canvas attributes default to 300x150 in jsdom.
+    expect(shell.canvas.width).toBe(300);
+    expect(shell.canvas.height).toBe(150);
   });
 
-  it('updates canvas dimensions on window resize', () => {
+  it('does not attach a resize listener', () => {
+    const addEventListenerSpy = vi.spyOn(window, 'addEventListener');
+
     initShell();
 
-    vi.stubGlobal('innerWidth', 1920);
-    vi.stubGlobal('innerHeight', 1080);
-    window.dispatchEvent(new Event('resize'));
+    const resizeAdded = addEventListenerSpy.mock.calls.some(
+      ([event]) => event === 'resize',
+    );
+    expect(resizeAdded).toBe(false);
 
-    const canvas = document.getElementById('cathedral') as HTMLCanvasElement;
-    expect(canvas.width).toBe(1920);
-    expect(canvas.height).toBe(1080);
+    addEventListenerSpy.mockRestore();
   });
 
   it('throws if #cathedral canvas is missing', () => {
