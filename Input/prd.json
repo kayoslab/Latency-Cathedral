@@ -1,0 +1,305 @@
+{
+  "project": "latency-cathedral",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Initialize the Vite and TypeScript workspace",
+      "description": "As a developer, I want a clean Vite and TypeScript workspace so that I can run and build the project locally.",
+      "acceptanceCriteria": [
+        "`npm install` completes successfully",
+        "`npm run dev` starts the local server",
+        "`npm run build` creates a production build",
+        "The default page loads in a browser"
+      ],
+      "priority": 1,
+      "passes": false,
+      "depends_on": [],
+      "notes": "Foundation ticket."
+    },
+    {
+      "id": "US-002",
+      "title": "Add linting, typecheck, and unit test scripts",
+      "description": "As a developer, I want baseline quality scripts so that later tickets have a clear definition of done.",
+      "acceptanceCriteria": [
+        "`npm run lint` exists",
+        "`npm run typecheck` exists",
+        "`npm run test` exists",
+        "A sample unit test passes"
+      ],
+      "priority": 1,
+      "passes": false,
+      "depends_on": [
+        "US-001"
+      ],
+      "notes": "Required by most later engineering tickets."
+    },
+    {
+      "id": "US-003",
+      "title": "Create full-screen application shell",
+      "description": "As a user, I want a clean full-screen page layout so that the artwork has an immersive canvas.",
+      "acceptanceCriteria": [
+        "Viewport fills browser window",
+        "Canvas host element exists",
+        "Overlay container exists",
+        "No page scrollbars on normal desktop resolution"
+      ],
+      "priority": 1,
+      "passes": false,
+      "depends_on": [
+        "US-001"
+      ],
+      "notes": "Required before renderer setup."
+    },
+    {
+      "id": "US-004",
+      "title": "Bootstrap three.js renderer",
+      "description": "As a user, I want a basic rendered 3D scene so that the graphics pipeline is confirmed working.",
+      "acceptanceCriteria": [
+        "Renderer attaches to canvas host",
+        "Camera and light are created",
+        "Placeholder mesh is visible",
+        "No uncaught runtime errors on load"
+      ],
+      "priority": 1,
+      "passes": false,
+      "depends_on": [
+        "US-003"
+      ],
+      "notes": "Blocks all visual generation work."
+    },
+    {
+      "id": "US-005",
+      "title": "Define domain models for metrics and visuals",
+      "description": "As a developer, I want typed models for network data and scene parameters so that modules exchange data clearly.",
+      "acceptanceCriteria": [
+        "Interfaces exist for ProbeSample, NetworkSnapshot, SceneParams",
+        "Normalization helpers exist",
+        "Helpers clamp invalid values",
+        "Unit tests cover edge cases"
+      ],
+      "priority": 1,
+      "passes": false,
+      "depends_on": [
+        "US-002"
+      ],
+      "notes": "Required for metric aggregation and mapping."
+    },
+    {
+      "id": "US-006",
+      "title": "Add deterministic fast, mixed, and poor presets",
+      "description": "As a developer, I want simulated connection presets so that visuals can be developed without relying on live network state.",
+      "acceptanceCriteria": [
+        "Fast preset exists",
+        "Mixed preset exists",
+        "Poor preset exists",
+        "Preset switch updates current snapshot"
+      ],
+      "priority": 1,
+      "passes": false,
+      "depends_on": [
+        "US-005"
+      ],
+      "notes": "Useful early for parallel visual development."
+    },
+    {
+      "id": "US-007",
+      "title": "Implement same-origin latency probe sampler",
+      "description": "As the system, I want repeated same-origin probes so that RTT and jitter can be estimated safely in-browser.",
+      "acceptanceCriteria": [
+        "Probe asset exists",
+        "Sampler performs timed fetch requests",
+        "Current RTT is calculated",
+        "Rolling jitter is calculated"
+      ],
+      "priority": 1,
+      "passes": false,
+      "depends_on": [
+        "US-001",
+        "US-005"
+      ],
+      "notes": "Primary live telemetry path."
+    },
+    {
+      "id": "US-008",
+      "title": "Collect resource timing metrics",
+      "description": "As the system, I want browser resource timing data so that load behavior can influence visuals.",
+      "acceptanceCriteria": [
+        "PerformanceObserver is feature-detected",
+        "Resource entries are collected",
+        "Duration values are extracted",
+        "Unsupported browsers fail gracefully"
+      ],
+      "priority": 1,
+      "passes": false,
+      "depends_on": [
+        "US-005",
+        "US-007"
+      ],
+      "notes": "Secondary telemetry source."
+    },
+    {
+      "id": "US-009",
+      "title": "Aggregate metrics into one normalized snapshot",
+      "description": "As the system, I want one merged network state object so that rendering code uses a single input.",
+      "acceptanceCriteria": [
+        "Aggregator outputs one snapshot object",
+        "Preset mode overrides live mode",
+        "Missing sources do not crash output",
+        "Snapshot updates on cadence"
+      ],
+      "priority": 1,
+      "passes": false,
+      "depends_on": [
+        "US-005",
+        "US-006",
+        "US-007",
+        "US-008"
+      ],
+      "notes": "Core integration point."
+    },
+    {
+      "id": "US-010",
+      "title": "Map snapshot to cathedral scene parameters",
+      "description": "As the system, I want network conditions translated into art-direction values so that visuals react consistently.",
+      "acceptanceCriteria": [
+        "Fast state yields high symmetry",
+        "Poor state yields high fracture",
+        "Mapper is deterministic",
+        "Unit tests verify mappings"
+      ],
+      "priority": 1,
+      "passes": false,
+      "depends_on": [
+        "US-009"
+      ],
+      "notes": "Pure logic ticket."
+    },
+    {
+      "id": "US-011",
+      "title": "Generate base cathedral geometry",
+      "description": "As a user, I want a recognizable cathedral form so that the concept is visually legible.",
+      "acceptanceCriteria": [
+        "Geometry group is generated",
+        "Contains base, nave, and towers",
+        "Can rebuild after parameter changes",
+        "No leaked disposed meshes"
+      ],
+      "priority": 1,
+      "passes": false,
+      "depends_on": [
+        "US-004",
+        "US-010"
+      ],
+      "notes": "Main visual milestone."
+    },
+    {
+      "id": "US-012",
+      "title": "Add ruin modifiers for degraded connections",
+      "description": "As a user, I want poor connections to create fractured brutalist ruins.",
+      "acceptanceCriteria": [
+        "Sections can collapse or distort",
+        "Debris density increases on poor state",
+        "Transforms remain valid numbers",
+        "Fast state remains mostly clean"
+      ],
+      "priority": 1,
+      "passes": false,
+      "depends_on": [
+        "US-011"
+      ],
+      "notes": "Core artistic contrast."
+    },
+    {
+      "id": "US-013",
+      "title": "Add atmosphere, fog, and lighting moods",
+      "description": "As a user, I want mood changes between elegant and ruined states.",
+      "acceptanceCriteria": [
+        "Fast state is brighter and cleaner",
+        "Poor state is darker or denser",
+        "Fog values update dynamically",
+        "Palette changes do not recreate renderer"
+      ],
+      "priority": 2,
+      "passes": false,
+      "depends_on": [
+        "US-010",
+        "US-011"
+      ],
+      "notes": "Polish layer."
+    },
+    {
+      "id": "US-014",
+      "title": "Add debug HUD",
+      "description": "As a developer, I want visible metrics and scene values so that tuning is easier.",
+      "acceptanceCriteria": [
+        "HUD shows latency",
+        "HUD shows jitter",
+        "HUD shows quality band",
+        "HUD can be toggled"
+      ],
+      "priority": 2,
+      "passes": false,
+      "depends_on": [
+        "US-003",
+        "US-009"
+      ],
+      "notes": "Developer tooling."
+    },
+    {
+      "id": "US-015",
+      "title": "Add reduced motion and hidden-tab throttling",
+      "description": "As a user, I want respectful motion settings and reduced background work.",
+      "acceptanceCriteria": [
+        "Reduced-motion preference lowers animation intensity",
+        "Hidden tabs throttle loops",
+        "Returning to tab resumes cleanly",
+        "No duplicate timers created"
+      ],
+      "priority": 1,
+      "passes": false,
+      "depends_on": [
+        "US-004",
+        "US-009"
+      ],
+      "notes": "Operational quality requirement."
+    },
+    {
+      "id": "US-016",
+      "title": "Add PNG export and shareable preset URLs",
+      "description": "As a user, I want to save or share interesting cathedrals.",
+      "acceptanceCriteria": [
+        "PNG export works",
+        "URL restores preset state",
+        "Shared URL loads correctly",
+        "No crash if clipboard unavailable"
+      ],
+      "priority": 2,
+      "passes": false,
+      "depends_on": [
+        "US-011",
+        "US-014"
+      ],
+      "notes": "Good public-facing feature."
+    },
+    {
+      "id": "US-017",
+      "title": "Add browser smoke tests",
+      "description": "As a developer, I want end-to-end tests so that core flows are validated in a real browser.",
+      "acceptanceCriteria": [
+        "App loads in browser automation",
+        "Preset switching works",
+        "Canvas is visible",
+        "Tests run from npm script"
+      ],
+      "priority": 2,
+      "passes": false,
+      "depends_on": [
+        "US-002",
+        "US-003",
+        "US-004",
+        "US-006"
+      ],
+      "notes": "Recommended before launch."
+    }
+  ]
+}
