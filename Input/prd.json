@@ -12,11 +12,10 @@
         "The default page loads in a browser"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "depends_on": [],
       "notes": "Foundation ticket.",
-      "status": "in_progress",
-      "claimed_by": "worker-3"
+      "status": "pass"
     },
     {
       "id": "US-002",
