@@ -156,7 +156,7 @@
         "Snapshot updates on cadence"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "depends_on": [
         "US-005",
         "US-006",
@@ -164,8 +164,7 @@
         "US-008"
       ],
       "notes": "Core integration point.",
-      "status": "in_progress",
-      "claimed_by": "worker-1"
+      "status": "pass"
     },
     {
       "id": "US-010",

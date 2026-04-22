@@ -16,3 +16,5 @@
 
 ## US-017: Add browser smoke tests
 
+## US-009: Aggregate metrics into one normalized snapshot
+
