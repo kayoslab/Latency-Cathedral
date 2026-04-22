@@ -25,6 +25,8 @@ export interface ResourceTimingEntry {
   timestampMs: number;
 }
 
+export type QualityBand = 'excellent' | 'good' | 'degraded' | 'poor';
+
 export interface SceneParams {
   height: number;
   symmetry: number;

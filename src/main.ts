@@ -7,6 +7,8 @@ import { ProbeSampler } from './metrics/probeSampler';
 import { ResourceTimingCollector } from './metrics/resourceTiming';
 import { MetricsAggregator } from './metrics/aggregator';
 import { createVisibilityManager } from './ui/visibilityManager';
+import { createDebugHud } from './ui/debugHud';
+import { createKeyboardToggle } from './ui/keyboardToggle';
 
 const { canvas, overlay } = initShell();
 const renderer = initRenderer(canvas);
@@ -40,15 +42,28 @@ visibilityManager.onVisible(() => {
   aggregator.start();
 });
 
+const debugHud = createDebugHud(overlay);
+const keyboardToggle = createKeyboardToggle('`', () => debugHud.toggle());
+
+// Seed HUD with initial snapshot so it has content before first aggregator tick
+{
+  const initialSnapshot = aggregator.getSnapshot();
+  debugHud.update(initialSnapshot, mapSnapshotToScene(initialSnapshot));
+}
+
 aggregator.subscribe((snapshot) => {
   const scene = mapSnapshotToScene(snapshot);
+  debugHud.update(snapshot, scene);
   console.log('[aggregator] snapshot → scene', scene);
 });
 
 presetState.subscribe((snapshot, name) => {
+  const scene = mapSnapshotToScene(snapshot);
+  debugHud.update(snapshot, scene);
   console.log(`[preset] ${name}`, snapshot);
 });
 
-// References available for future wiring (HUD, dispose on unload)
+// References available for future disposal
 void renderer;
 void visibilityManager;
+void keyboardToggle;
