@@ -26,8 +26,9 @@ vi.mock('three', () => {
     return {
       geometry,
       material,
-      position: { set: vi.fn(), x: 0, y: 0, z: 0 },
+      position: { set: vi.fn(function set(this: { x: number; y: number; z: number }, x: number, y: number, z: number) { this.x = x; this.y = y; this.z = z; }), x: 0, y: 0, z: 0 },
       rotation: { x: 0, y: 0, z: 0 },
+      scale: { x: 1, y: 1, z: 1 },
       isMesh: true,
     };
   });
@@ -214,5 +215,66 @@ describe('US-011: sceneParamsChanged', () => {
     const b = makeParams({ ruinLevel: 1.0 });
 
     expect(sceneParamsChanged(a, b)).toBe(true);
+  });
+});
+
+describe('US-012: buildCathedralGeometry with ruin modifiers', () => {
+  let buildCathedralGeometry: typeof import('../../src/render/buildCathedralGeometry').buildCathedralGeometry;
+
+  beforeEach(async () => {
+    vi.resetModules();
+    const mod = await import('../../src/render/buildCathedralGeometry');
+    buildCathedralGeometry = mod.buildCathedralGeometry;
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('default makeParams (fracture=0.1, ruinLevel=0.1) still produces exactly 4 children — no US-011 regression', () => {
+    const group = buildCathedralGeometry(makeParams());
+
+    // Base + nave + 2 towers = 4; below RUIN_THRESHOLD so no debris added
+    expect(group.children.length).toBe(4);
+  });
+
+  it('fast preset values (fracture=0.007, ruinLevel=0.009) produce exactly 4 children — fast state clean', () => {
+    const group = buildCathedralGeometry(makeParams({ fracture: 0.007, ruinLevel: 0.009 }));
+
+    expect(group.children.length).toBe(4);
+  });
+
+  it('poor-like values (fracture=0.8, ruinLevel=0.8) produce more than 4 children (debris added)', () => {
+    const group = buildCathedralGeometry(makeParams({ fracture: 0.8, ruinLevel: 0.8 }));
+
+    expect(group.children.length).toBeGreaterThan(4);
+  });
+
+  it('poor-like values produce group with distorted positions', () => {
+    // Build clean cathedral for reference
+    const cleanGroup = buildCathedralGeometry(makeParams({ fracture: 0, ruinLevel: 0 }));
+    const cleanPositions = cleanGroup.children.map((c) => {
+      const m = c as { position: { x: number; y: number; z: number } };
+      return { x: m.position.x, y: m.position.y, z: m.position.z };
+    });
+
+    // Build ruined cathedral
+    const ruinGroup = buildCathedralGeometry(makeParams({ fracture: 0.8, ruinLevel: 0.9 }));
+
+    // At least one of the original 4 meshes should have a different position
+    let anyDistorted = false;
+    for (let i = 0; i < Math.min(4, ruinGroup.children.length); i++) {
+      const m = ruinGroup.children[i] as { position: { x: number; y: number; z: number } };
+      if (
+        m.position.x !== cleanPositions[i].x ||
+        m.position.y !== cleanPositions[i].y ||
+        m.position.z !== cleanPositions[i].z
+      ) {
+        anyDistorted = true;
+        break;
+      }
+    }
+
+    expect(anyDistorted).toBe(true);
   });
 });
