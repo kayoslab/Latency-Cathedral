@@ -9,12 +9,18 @@ import { MetricsAggregator } from './metrics/aggregator';
 import { createVisibilityManager } from './ui/visibilityManager';
 import { createDebugHud } from './ui/debugHud';
 import { createKeyboardToggle } from './ui/keyboardToggle';
+import { parsePresetFromUrl } from './domain/presetUrl';
+import { initPngExport } from './ui/pngExport';
+import { initShareUrl } from './ui/shareUrl';
 
 const { canvas, overlay } = initShell();
 const renderer = initRenderer(canvas);
 
-const presetState = createPresetState();
-initPresetSelector(overlay, presetState);
+const initialPreset = parsePresetFromUrl(location.search);
+const presetState = createPresetState(initialPreset ?? undefined);
+initPresetSelector(overlay, presetState, initialPreset);
+const pngExport = initPngExport(overlay, canvas);
+const shareUrl = initShareUrl(overlay, presetState);
 
 const probeSampler = new ProbeSampler();
 const resourceTimingCollector = new ResourceTimingCollector();
@@ -71,3 +77,5 @@ presetState.subscribe((snapshot, name) => {
 void renderer;
 void visibilityManager;
 void keyboardToggle;
+void pngExport;
+void shareUrl;

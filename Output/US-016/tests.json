@@ -1,0 +1,1 @@
+{"test_results":"pass","failures":[],"tests_added":["tests/unit/domain/presetUrl.test.ts","tests/unit/ui/pngExport.test.ts","tests/unit/ui/shareUrl.test.ts","tests/e2e/export-share.spec.ts"],"tests_modified":[],"failure_source":null}

@@ -7,7 +7,7 @@ const PRESETS: { name: PresetName; label: string }[] = [
   { name: 'poor', label: 'Poor' },
 ];
 
-export function initPresetSelector(overlay: HTMLDivElement, state: PresetState): void {
+export function initPresetSelector(overlay: HTMLDivElement, state: PresetState, initialPreset?: PresetName | null): void {
   const container = document.createElement('div');
   container.style.position = 'absolute';
   container.style.top = '12px';
@@ -40,6 +40,14 @@ export function initPresetSelector(overlay: HTMLDivElement, state: PresetState):
 
     buttons.push(btn);
     container.appendChild(btn);
+  }
+
+  if (initialPreset) {
+    const activeBtn = buttons.find((b) => b.getAttribute('data-preset') === initialPreset);
+    if (activeBtn) {
+      activeBtn.classList.add('active');
+      state.select(initialPreset);
+    }
   }
 
   overlay.appendChild(container);
