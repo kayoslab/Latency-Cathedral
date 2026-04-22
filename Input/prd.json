@@ -100,13 +100,12 @@
         "Preset switch updates current snapshot"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "depends_on": [
         "US-005"
       ],
       "notes": "Useful early for parallel visual development.",
-      "status": "in_progress",
-      "claimed_by": "worker-2"
+      "status": "pass"
     },
     {
       "id": "US-007",
@@ -143,7 +142,9 @@
         "US-005",
         "US-007"
       ],
-      "notes": "Secondary telemetry source."
+      "notes": "Secondary telemetry source.",
+      "status": "in_progress",
+      "claimed_by": "worker-3"
     },
     {
       "id": "US-009",

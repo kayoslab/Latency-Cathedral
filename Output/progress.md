@@ -10,3 +10,5 @@
 
 ## US-007: Implement same-origin latency probe sampler
 
+## US-006: Add deterministic fast, mixed, and poor presets
+
