@@ -214,11 +214,12 @@
         "Fast state remains mostly clean"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "depends_on": [
         "US-011"
       ],
-      "notes": "Core artistic contrast."
+      "notes": "Core artistic contrast.",
+      "status": "pass"
     },
     {
       "id": "US-013",
@@ -236,7 +237,9 @@
         "US-010",
         "US-011"
       ],
-      "notes": "Polish layer."
+      "notes": "Polish layer.",
+      "status": "in_progress",
+      "claimed_by": "worker-3"
     },
     {
       "id": "US-014",
@@ -293,7 +296,9 @@
         "US-011",
         "US-014"
       ],
-      "notes": "Good public-facing feature."
+      "notes": "Good public-facing feature.",
+      "status": "in_progress",
+      "claimed_by": "worker-2"
     },
     {
       "id": "US-017",

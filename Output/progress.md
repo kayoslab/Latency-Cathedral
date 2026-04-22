@@ -28,3 +28,5 @@
 
 ## US-011: Generate base cathedral geometry
 
+## US-012: Add ruin modifiers for degraded connections
+
