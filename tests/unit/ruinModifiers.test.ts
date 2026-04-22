@@ -7,9 +7,9 @@ vi.mock('three', () => {
   const Color = vi.fn(function Color() {});
 
   const BoxGeometry = vi.fn(function BoxGeometry(
-    _w?: number,
-    _h?: number,
-    _d?: number,
+    _w?: number, // eslint-disable-line @typescript-eslint/no-unused-vars
+    _h?: number, // eslint-disable-line @typescript-eslint/no-unused-vars
+    _d?: number, // eslint-disable-line @typescript-eslint/no-unused-vars
   ) {
     return { dispose: vi.fn(), type: 'BoxGeometry' };
   });
@@ -26,7 +26,7 @@ vi.mock('three', () => {
     return {
       geometry,
       material,
-      position: { set: vi.fn(function set(x: number, y: number, z: number) { this.x = x; this.y = y; this.z = z; }), x: 0, y: 0, z: 0 },
+      position: { set: vi.fn(function set(this: { x: number; y: number; z: number }, x: number, y: number, z: number) { this.x = x; this.y = y; this.z = z; }), x: 0, y: 0, z: 0 },
       rotation: { x: 0, y: 0, z: 0 },
       scale: { x: 1, y: 1, z: 1 },
       isMesh: true,
@@ -128,7 +128,7 @@ describe('US-012: applyRuinModifiers', () => {
 
     // Record original positions
     const originalPositions = group.children.map((c) => {
-      const m = c as MeshLike;
+      const m = c as unknown as MeshLike;
       return { x: m.position.x, y: m.position.y, z: m.position.z };
     });
 
@@ -139,7 +139,7 @@ describe('US-012: applyRuinModifiers', () => {
 
     // Positions unchanged
     group.children.forEach((c, i) => {
-      const m = c as MeshLike;
+      const m = c as unknown as MeshLike;
       expect(m.position.x).toBe(originalPositions[i].x);
       expect(m.position.y).toBe(originalPositions[i].y);
       expect(m.position.z).toBe(originalPositions[i].z);
@@ -161,11 +161,11 @@ describe('US-012: applyRuinModifiers', () => {
     const group = await buildBaseGroup();
 
     const originalPositions = group.children.map((c) => {
-      const m = c as MeshLike;
+      const m = c as unknown as MeshLike;
       return { x: m.position.x, y: m.position.y, z: m.position.z };
     });
     const originalRotations = group.children.map((c) => {
-      const m = c as MeshLike;
+      const m = c as unknown as MeshLike;
       return { x: m.rotation.x, y: m.rotation.y, z: m.rotation.z };
     });
 
@@ -176,7 +176,7 @@ describe('US-012: applyRuinModifiers', () => {
     let anyRotationChanged = false;
 
     group.children.forEach((c, i) => {
-      const m = c as MeshLike;
+      const m = c as unknown as MeshLike;
       if (
         m.position.x !== originalPositions[i].x ||
         m.position.y !== originalPositions[i].y ||
@@ -203,7 +203,7 @@ describe('US-012: applyRuinModifiers', () => {
     applyRuinModifiers(group, makeParams({ fracture: 0, ruinLevel: 0.6 }));
 
     // Non-base meshes are index > 0
-    const nonBaseMeshes = group.children.slice(1) as MeshLike[];
+    const nonBaseMeshes = group.children.slice(1) as unknown as MeshLike[];
     const anyCollapsed = nonBaseMeshes.some((m) => m.scale.y < 1);
 
     expect(anyCollapsed).toBe(true);
@@ -237,7 +237,7 @@ describe('US-012: applyRuinModifiers', () => {
     applyRuinModifiers(group, makeParams({ fracture: 1, ruinLevel: 1 }));
 
     for (const child of group.children) {
-      const m = child as MeshLike;
+      const m = child as unknown as MeshLike;
       expect(Number.isFinite(m.position.x)).toBe(true);
       expect(Number.isFinite(m.position.y)).toBe(true);
       expect(Number.isFinite(m.position.z)).toBe(true);
@@ -256,7 +256,7 @@ describe('US-012: applyRuinModifiers', () => {
     applyRuinModifiers(group, makeParams({ fracture: 0.15, ruinLevel: 0.15 }));
 
     for (const child of group.children) {
-      const m = child as MeshLike;
+      const m = child as unknown as MeshLike;
       expect(Number.isFinite(m.position.x)).toBe(true);
       expect(Number.isFinite(m.position.y)).toBe(true);
       expect(Number.isFinite(m.position.z)).toBe(true);
@@ -283,8 +283,8 @@ describe('US-012: applyRuinModifiers', () => {
     expect(group1.children.length).toBe(group2.children.length);
 
     for (let i = 0; i < group1.children.length; i++) {
-      const m1 = group1.children[i] as MeshLike;
-      const m2 = group2.children[i] as MeshLike;
+      const m1 = group1.children[i] as unknown as MeshLike;
+      const m2 = group2.children[i] as unknown as MeshLike;
       expect(m1.position.x).toBe(m2.position.x);
       expect(m1.position.y).toBe(m2.position.y);
       expect(m1.position.z).toBe(m2.position.z);
@@ -311,7 +311,7 @@ describe('US-012: applyRuinModifiers', () => {
       let total = 0;
       group.children.forEach((c, i) => {
         if (i === 0) return; // skip base
-        const m = c as MeshLike;
+        const m = c as unknown as MeshLike;
         total += Math.abs(m.position.x - i * 0.5);
         total += Math.abs(m.position.y - i * 0.3);
         total += Math.abs(m.position.z - 0);

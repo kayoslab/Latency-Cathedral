@@ -1,12 +1,10 @@
 /**
  * Cathedral geometry builder.
  *
- * Consumes only `height` and `symmetry` from SceneParams.
+ * Consumes `height`, `symmetry`, `fracture`, and `ruinLevel` from SceneParams.
  * Deferred params (handled by other tickets):
- *  - fracture → US-012 (ruin modifiers)
  *  - fog → US-013 (atmosphere/lighting)
  *  - lightIntensity → US-013 (atmosphere/lighting)
- *  - ruinLevel → US-012 (ruin modifiers)
  */
 import {
   Group,
@@ -16,6 +14,7 @@ import {
   MeshStandardMaterial,
 } from 'three';
 import type { SceneParams } from '../domain/types';
+import { applyRuinModifiers } from './ruinModifiers';
 
 export function buildCathedralGeometry(params: SceneParams): Group {
   const { height, symmetry } = params;
@@ -57,6 +56,8 @@ export function buildCathedralGeometry(params: SceneParams): Group {
   const tower2 = new Mesh(towerGeo2, towerMat2);
   tower2.position.set(towerXOffset, baseHeight + towerHeight / 2, -1.2);
   group.add(tower2);
+
+  applyRuinModifiers(group, params);
 
   return group;
 }
