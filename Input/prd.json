@@ -87,7 +87,7 @@
         "US-002"
       ],
       "notes": "Required for metric aggregation and mapping.",
-      "status": "fail"
+      "status": "available"
     },
     {
       "id": "US-006",
@@ -132,7 +132,7 @@
         "PerformanceObserver is feature-detected",
         "Resource entries are collected",
         "Duration values are extracted",
-        "Unsupported browsers fail gracefully"
+        "Unsupported browsers available gracefully"
       ],
       "priority": 1,
       "passes": false,
