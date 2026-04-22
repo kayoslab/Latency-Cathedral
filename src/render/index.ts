@@ -3,4 +3,5 @@ export type { RendererHandle } from './initRenderer';
 export { clampPixelRatio } from './clampPixelRatio';
 export { buildCathedralGeometry } from './buildCathedralGeometry';
 export { rebuildCathedral } from './rebuildCathedral';
-export { sceneParamsChanged } from './sceneParamsChanged';
+export { sceneParamsChanged, geometryParamsChanged } from './sceneParamsChanged';
+export { applyAtmosphere } from './applyAtmosphere';

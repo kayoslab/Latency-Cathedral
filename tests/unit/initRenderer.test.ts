@@ -4,7 +4,13 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 // Mock three.js — we only care about the dispose contract, not WebGL internals.
 // jsdom has no WebGL context, so we must mock the constructors.
 vi.mock('three', () => {
-  const Color = vi.fn(function Color() {});
+  const Color = vi.fn(function Color() {
+    return { r: 0, g: 0, b: 0, lerpColors: vi.fn() };
+  });
+
+  const Fog = vi.fn(function Fog(_color: number, near: number, far: number) {
+    return { color: new Color(), near, far };
+  });
 
   const WebGLRenderer = vi.fn(function WebGLRenderer() {
     return {
@@ -20,7 +26,8 @@ vi.mock('three', () => {
     return {
       add: vi.fn(),
       remove: vi.fn(),
-      background: null,
+      background: new Color(),
+      fog: new Fog(0, 50, 100),
     };
   });
 
@@ -32,14 +39,16 @@ vi.mock('three', () => {
     };
   });
 
-  const AmbientLight = vi.fn(function AmbientLight() {
+  const AmbientLight = vi.fn(function AmbientLight(_color?: number, intensity?: number) {
     return {
+      intensity: intensity ?? 1,
       isLight: true,
     };
   });
 
-  const DirectionalLight = vi.fn(function DirectionalLight() {
+  const DirectionalLight = vi.fn(function DirectionalLight(_color?: number, intensity?: number) {
     return {
+      intensity: intensity ?? 1,
       position: { set: vi.fn() },
       isLight: true,
     };
@@ -95,6 +104,7 @@ vi.mock('three', () => {
 
   return {
     Color,
+    Fog,
     WebGLRenderer,
     Scene,
     PerspectiveCamera,

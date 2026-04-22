@@ -6,8 +6,8 @@ export interface Lights {
 }
 
 export function createLights(): Lights {
-  const ambient = new AmbientLight(0xffffff, 0.4);
-  const directional = new DirectionalLight(0xffffff, 0.8);
+  const ambient = new AmbientLight(0xffffff, 0.6);
+  const directional = new DirectionalLight(0xffffff, 1.0);
   directional.position.set(5, 10, 7);
   return { ambient, directional };
 }

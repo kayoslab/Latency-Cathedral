@@ -7,7 +7,13 @@ const disposedGeometries: unknown[] = [];
 const disposedMaterials: unknown[] = [];
 
 vi.mock('three', () => {
-  const Color = vi.fn(function Color() {});
+  const Color = vi.fn(function Color() {
+    return { r: 0, g: 0, b: 0, lerpColors: vi.fn() };
+  });
+
+  const Fog = vi.fn(function Fog(_color: number, near: number, far: number) {
+    return { color: new Color(), near, far };
+  });
 
   const WebGLRenderer = vi.fn(function WebGLRenderer() {
     return {
@@ -30,7 +36,8 @@ vi.mock('three', () => {
         if (idx >= 0) sceneChildren.splice(idx, 1);
       }),
       children: sceneChildren,
-      background: null,
+      background: new Color(),
+      fog: new Fog(0, 50, 100),
     };
   });
 
@@ -42,12 +49,12 @@ vi.mock('three', () => {
     };
   });
 
-  const AmbientLight = vi.fn(function AmbientLight() {
-    return { isLight: true };
+  const AmbientLight = vi.fn(function AmbientLight(_color?: number, intensity?: number) {
+    return { intensity: intensity ?? 1, isLight: true };
   });
 
-  const DirectionalLight = vi.fn(function DirectionalLight() {
-    return { position: { set: vi.fn() }, isLight: true };
+  const DirectionalLight = vi.fn(function DirectionalLight(_color?: number, intensity?: number) {
+    return { intensity: intensity ?? 1, position: { set: vi.fn() }, isLight: true };
   });
 
   const BoxGeometry = vi.fn(function BoxGeometry() {
@@ -106,6 +113,7 @@ vi.mock('three', () => {
 
   return {
     Color,
+    Fog,
     WebGLRenderer,
     Scene,
     PerspectiveCamera,
