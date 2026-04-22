@@ -6,10 +6,8 @@ describe('US-015: motionManager', () => {
 
   // We need to track the change listener so we can simulate media query changes
   let changeListeners: Array<(e: { matches: boolean }) => void>;
-  let currentMatches: boolean;
 
   function stubMatchMedia(initialMatches: boolean) {
-    currentMatches = initialMatches;
     changeListeners = [];
 
     vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({
@@ -24,7 +22,6 @@ describe('US-015: motionManager', () => {
   }
 
   function fireMotionChange(matches: boolean) {
-    currentMatches = matches;
     for (const listener of [...changeListeners]) {
       listener({ matches });
     }
