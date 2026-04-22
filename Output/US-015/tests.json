@@ -1,0 +1,1 @@
+{"test_results":"pass","failures":[],"failure_source":null,"tests_added":["tests/unit/ui/visibilityManager.test.ts","tests/unit/ui/motionManager.test.ts","tests/unit/hiddenTabThrottling.test.ts","tests/unit/reducedMotion.test.ts","tests/e2e/reducedMotion.spec.ts"],"tests_modified":[]}

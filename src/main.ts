@@ -6,6 +6,7 @@ import { mapSnapshotToScene } from './domain/snapshotToScene';
 import { ProbeSampler } from './metrics/probeSampler';
 import { ResourceTimingCollector } from './metrics/resourceTiming';
 import { MetricsAggregator } from './metrics/aggregator';
+import { createVisibilityManager } from './ui/visibilityManager';
 
 const { canvas, overlay } = initShell();
 const renderer = initRenderer(canvas);
@@ -26,6 +27,19 @@ probeSampler.start();
 resourceTimingCollector.start();
 aggregator.start();
 
+// Throttle metrics collection when tab is hidden
+const visibilityManager = createVisibilityManager();
+
+visibilityManager.onHidden(() => {
+  probeSampler.stop();
+  aggregator.stop();
+});
+
+visibilityManager.onVisible(() => {
+  probeSampler.start();
+  aggregator.start();
+});
+
 aggregator.subscribe((snapshot) => {
   const scene = mapSnapshotToScene(snapshot);
   console.log('[aggregator] snapshot → scene', scene);
@@ -37,3 +51,4 @@ presetState.subscribe((snapshot, name) => {
 
 // References available for future wiring (HUD, dispose on unload)
 void renderer;
+void visibilityManager;
