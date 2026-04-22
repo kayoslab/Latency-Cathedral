@@ -181,7 +181,9 @@
       "depends_on": [
         "US-009"
       ],
-      "notes": "Pure logic ticket."
+      "notes": "Pure logic ticket.",
+      "status": "in_progress",
+      "claimed_by": "worker-1"
     },
     {
       "id": "US-011",
@@ -270,7 +272,9 @@
         "US-004",
         "US-009"
       ],
-      "notes": "Operational quality requirement."
+      "notes": "Operational quality requirement.",
+      "status": "in_progress",
+      "claimed_by": "worker-2"
     },
     {
       "id": "US-016",

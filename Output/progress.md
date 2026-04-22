@@ -18,3 +18,5 @@
 
 ## US-009: Aggregate metrics into one normalized snapshot
 
+## US-009: Aggregate metrics into one normalized snapshot
+
