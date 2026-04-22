@@ -1,0 +1,1 @@
+{"decision":"pass","gates_checked":["lint","typecheck","test","test:e2e"],"failures":[],"notes":"All 4 gates pass cleanly. Lint: 0 errors. Typecheck: 0 errors. Unit tests: 25 files, 349 tests passed. E2E: 53 tests passed (13.9s). US-013 atmosphere tests included in both unit and E2E suites."}
