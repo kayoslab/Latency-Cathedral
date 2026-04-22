@@ -24,9 +24,7 @@ test.describe('US-008: resource timing metrics', () => {
 
     const result = await page.evaluate(async () => {
       // @ts-expect-error Vite resolves this at runtime in the browser
-      const { ResourceTimingCollector } = await import(
-        '/src/metrics/resourceTiming.ts'
-      );
+      const { ResourceTimingCollector } = await import('/src/metrics/resourceTiming.ts');
       const collector = new ResourceTimingCollector({ windowSize: 20 });
       collector.start();
 
@@ -59,9 +57,7 @@ test.describe('US-008: resource timing metrics', () => {
 
     const durations = await page.evaluate(async () => {
       // @ts-expect-error Vite resolves this at runtime in the browser
-      const { ResourceTimingCollector } = await import(
-        '/src/metrics/resourceTiming.ts'
-      );
+      const { ResourceTimingCollector } = await import('/src/metrics/resourceTiming.ts');
       const collector = new ResourceTimingCollector();
       collector.start();
 
@@ -91,9 +87,7 @@ test.describe('US-008: resource timing metrics', () => {
 
     const supported = await page.evaluate(async () => {
       // @ts-expect-error Vite resolves this at runtime in the browser
-      const { isResourceTimingSupported } = await import(
-        '/src/metrics/resourceTiming.ts'
-      );
+      const { isResourceTimingSupported } = await import('/src/metrics/resourceTiming.ts');
       return isResourceTimingSupported();
     });
 
@@ -114,9 +108,7 @@ test.describe('US-008: resource timing metrics', () => {
 
     await page.evaluate(async () => {
       // @ts-expect-error Vite resolves this at runtime in the browser
-      const { ResourceTimingCollector } = await import(
-        '/src/metrics/resourceTiming.ts'
-      );
+      const { ResourceTimingCollector } = await import('/src/metrics/resourceTiming.ts');
       const collector = new ResourceTimingCollector();
       collector.start();
 

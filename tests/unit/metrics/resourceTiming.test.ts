@@ -72,6 +72,7 @@ describe('US-008: resource timing metrics', () => {
 
     it('returns true when PerformanceObserver supports "resource" entry type', () => {
       const FakeObserver = class {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         constructor(_cb: PerformanceObserverCallback) {}
         observe() {}
         disconnect() {}
@@ -209,7 +210,7 @@ describe('US-008: resource timing metrics', () => {
 
     describe('when API is supported', () => {
       let observeCallback: PerformanceObserverCallback;
-      let mockDisconnect: ReturnType<typeof vi.fn>;
+      let mockDisconnect: ReturnType<typeof vi.fn<() => void>>;
 
       beforeEach(async () => {
         vi.resetModules();

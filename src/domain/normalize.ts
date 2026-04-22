@@ -34,3 +34,25 @@ export function normalizeJitter(jitterMs: number, max: number = 500): number {
   if (max <= 0) return 0;
   return clamped / max;
 }
+
+/**
+ * Normalize a resource load duration (ms) to a 0–1 range.
+ * Default max: 5000 ms.
+ */
+export function normalizeLoadDuration(durationMs: number, max: number = 5000): number {
+  if (Number.isNaN(durationMs)) return 0;
+  const clamped = clamp(durationMs, 0, max);
+  if (max <= 0) return 0;
+  return clamped / max;
+}
+
+/**
+ * Compute the arithmetic mean of an array of durations,
+ * filtering out non-finite values (NaN, Infinity, -Infinity).
+ * Returns 0 for an empty array or when all values are non-finite.
+ */
+export function computeMeanDuration(durations: number[]): number {
+  const finite = durations.filter(Number.isFinite);
+  if (finite.length === 0) return 0;
+  return finite.reduce((sum, d) => sum + d, 0) / finite.length;
+}
