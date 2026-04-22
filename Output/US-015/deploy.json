@@ -1,0 +1,1 @@
+{"decision":"pass","gates_checked":["lint","typecheck","tests","e2e"],"failures":[],"notes":"All quality gates green: lint clean, typecheck clean, 253 unit tests passed (17 files), 42 e2e tests passed including 5 US-015-specific tests (reducedMotion.spec.ts)."}
