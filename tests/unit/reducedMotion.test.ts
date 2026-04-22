@@ -25,6 +25,11 @@ vi.mock('three/examples/jsm/postprocessing/UnrealBloomPass.js', () => ({
 vi.mock('three/examples/jsm/postprocessing/OutputPass.js', () => ({
   OutputPass: vi.fn(function OutputPass() { return {}; }),
 }));
+vi.mock('three/examples/jsm/controls/OrbitControls.js', () => ({
+  OrbitControls: vi.fn(function OrbitControls() {
+    return { target: { copy: vi.fn() }, autoRotate: false, autoRotateSpeed: 0, minPolarAngle: 0, maxPolarAngle: Math.PI, minDistance: 0, maxDistance: Infinity, enableDamping: false, dampingFactor: 0, enablePan: true, update: vi.fn(), dispose: vi.fn() };
+  }),
+}));
 vi.mock('../../src/render/stoneTexture', () => ({
   createStoneTextures: vi.fn(() => ({ color: {}, normal: {}, roughness: {} })),
   createRoofNormalMap: vi.fn(() => ({})),

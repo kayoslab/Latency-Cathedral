@@ -22,6 +22,11 @@ vi.mock('three/examples/jsm/postprocessing/UnrealBloomPass.js', () => ({
 vi.mock('three/examples/jsm/postprocessing/OutputPass.js', () => ({
   OutputPass: vi.fn(function OutputPass() { return {}; }),
 }));
+vi.mock('three/examples/jsm/controls/OrbitControls.js', () => ({
+  OrbitControls: vi.fn(function OrbitControls() {
+    return { target: { copy: vi.fn() }, autoRotate: false, autoRotateSpeed: 0, minPolarAngle: 0, maxPolarAngle: Math.PI, minDistance: 0, maxDistance: Infinity, enableDamping: false, dampingFactor: 0, enablePan: true, update: vi.fn(), dispose: vi.fn() };
+  }),
+}));
 vi.mock('../../src/render/stoneTexture', () => ({
   createStoneTextures: vi.fn(() => ({ color: {}, normal: {}, roughness: {} })),
   createRoofNormalMap: vi.fn(() => ({})),
@@ -252,49 +257,49 @@ describe('US-011: rebuildCathedral', () => {
   it('handles null currentGroup gracefully (first call)', () => {
     const scene = createMockScene();
 
-    const group = rebuildCathedral(scene, null, makeParams());
+    const handle = rebuildCathedral(scene, null, makeParams());
 
-    expect(group).toBeDefined();
-    expect(group.isGroup).toBe(true);
+    expect(handle).toBeDefined();
+    expect(handle.group.isGroup).toBe(true);
   });
 
   it('adds new group to scene', () => {
     const scene = createMockScene();
 
-    const group = rebuildCathedral(scene, null, makeParams());
+    const handle = rebuildCathedral(scene, null, makeParams());
 
-    expect((scene as unknown as { add: ReturnType<typeof vi.fn> }).add).toHaveBeenCalledWith(group);
+    expect((scene as unknown as { add: ReturnType<typeof vi.fn> }).add).toHaveBeenCalledWith(handle.group);
   });
 
   it('returns the new group', () => {
     const scene = createMockScene();
 
-    const group = rebuildCathedral(scene, null, makeParams());
+    const handle = rebuildCathedral(scene, null, makeParams());
 
-    expect(group).toBeDefined();
-    expect(group.children.length).toBeGreaterThanOrEqual(3);
+    expect(handle.group).toBeDefined();
+    expect(handle.group.children.length).toBeGreaterThanOrEqual(3);
   });
 
   it('removes old group from scene when replacing', () => {
     const scene = createMockScene();
 
     // First build
-    const oldGroup = rebuildCathedral(scene, null, makeParams());
+    const oldHandle = rebuildCathedral(scene, null, makeParams());
 
     // Rebuild with different params
-    rebuildCathedral(scene, oldGroup, makeParams({ height: 0.5 }));
+    rebuildCathedral(scene, oldHandle, makeParams({ height: 0.5 }));
 
-    expect((scene as unknown as { remove: ReturnType<typeof vi.fn> }).remove).toHaveBeenCalledWith(oldGroup);
+    expect((scene as unknown as { remove: ReturnType<typeof vi.fn> }).remove).toHaveBeenCalledWith(oldHandle.group);
   });
 
   it('disposes all geometries and materials on old group before creating new one', () => {
     const scene = createMockScene();
 
     // First build
-    const oldGroup = rebuildCathedral(scene, null, makeParams());
+    const oldHandle = rebuildCathedral(scene, null, makeParams());
 
     // Verify old group has children with geometry/material
-    const oldChildren = oldGroup.children;
+    const oldChildren = oldHandle.group.children;
     expect(oldChildren.length).toBeGreaterThan(0);
 
     // Collect dispose spies from old group meshes
@@ -307,7 +312,7 @@ describe('US-011: rebuildCathedral', () => {
     }
 
     // Rebuild — old group should be disposed
-    rebuildCathedral(scene, oldGroup, makeParams({ height: 0.3 }));
+    rebuildCathedral(scene, oldHandle, makeParams({ height: 0.3 }));
 
     // Verify all geometries on old group were disposed
     for (const disposeFn of geometryDisposeFns) {
@@ -323,18 +328,18 @@ describe('US-011: rebuildCathedral', () => {
   it('no leaked disposed meshes — dispose count matches mesh count', () => {
     const scene = createMockScene();
 
-    const oldGroup = rebuildCathedral(scene, null, makeParams());
-    const meshCount = oldGroup.children.filter(
+    const oldHandle = rebuildCathedral(scene, null, makeParams());
+    const meshCount = oldHandle.group.children.filter(
       (c: unknown) => (c as { isMesh?: boolean }).isMesh,
     ).length;
 
     // Collect geometry dispose spies
-    const geoDisposes = oldGroup.children
+    const geoDisposes = oldHandle.group.children
       .map((c: unknown) => (c as { geometry?: { dispose: ReturnType<typeof vi.fn> } }).geometry?.dispose)
       .filter(Boolean);
 
     // Rebuild triggers dispose
-    rebuildCathedral(scene, oldGroup, makeParams({ height: 0.4 }));
+    rebuildCathedral(scene, oldHandle, makeParams({ height: 0.4 }));
 
     // Every mesh geometry should have been disposed exactly once
     expect(geoDisposes.length).toBe(meshCount);

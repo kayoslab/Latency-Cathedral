@@ -171,8 +171,8 @@ export function buildCathedralGeometry(params: SceneParams): Group {
       const glassX = wallCX - side * W * 0.4;     // deep recess
       const mullionX = wallCX - side * W * 0.15;  // tracery layer
       const glassZ = winCZ;
-      const glassW = winBayD * 0.92;
-      const glassH = winH * 0.95;
+      const glassW = winBayD;     // fill entire opening width
+      const glassH = winH;        // fill entire opening height
       const gBot = winBot;
       const gCY = gBot + glassH / 2;
 
@@ -189,13 +189,12 @@ export function buildCathedralGeometry(params: SceneParams): Group {
       bx(g, 0.14, 0.14, tranW, mullionX, gBot + glassH * 0.55, glassZ, dkM(), 'detail');
       bx(g, 0.14, 0.14, tranW, mullionX, gBot + glassH * 0.78, glassZ, dkM(), 'detail');
 
-      // Sill + hood mold
-      bx(g, W + 0.25, 0.2, glassW + 0.5, wallCX, gBot - 0.1, glassZ, dkM(), 'detail');
+      // Hood mold above window (no sill to avoid Z-fighting)
       bx(g, W + 0.3, 0.15, glassW + 0.8, wallCX + side * 0.06, gBot + glassH + 0.25, glassZ, dkM(), 'detail');
 
       // ── Clerestory window ──
-      const clGW = winBayD * 0.88;
-      const clGH = clH * 0.92;
+      const clGW = winBayD;   // fill entire opening
+      const clGH = clH;       // fill entire opening
       const clGCY = clBot + clGH / 2;
       bx(g, 0.06, clGH, clGW, glassX, clGCY, winCZ, clGlM(height), 'glass', false);
       // Clerestory tracery: central mullion + transom
@@ -208,8 +207,9 @@ export function buildCathedralGeometry(params: SceneParams): Group {
   }
 
   // ════════════════════════════════════════
-  // CONTINUOUS AISLE WALLS (outer walls, same bay structure)
+  // CONTINUOUS AISLE WALLS (outer walls — shorter than nave for sloping roof)
   // ════════════════════════════════════════
+  const aOuterH = aH * 0.75; // outer wall shorter so roof slopes down
   for (const side of [-1, 1] as const) {
     const wallCX = side * (aOutX + W / 2);
 
@@ -224,26 +224,23 @@ export function buildCathedralGeometry(params: SceneParams): Group {
       const winCZ = winStart + winBayD / 2;
 
       // Pier
-      bx(g, W, aH, pierD, wallCX, aH / 2, pierCZ, stM(), 'structural');
+      bx(g, W, aOuterH, pierD, wallCX, aOuterH / 2, pierCZ, stM(), 'structural');
 
       // Window bay: lower wall + upper wall + glass
-      const awH = aH * 0.28;
-      const awBot = aH * 0.38;
+      const awH = aOuterH * 0.32;
+      const awBot = aOuterH * 0.38;
       bx(g, W, awBot, winBayD, wallCX, awBot / 2, winCZ, stM(), 'structural');
-      const aAbove = aH - (awBot + awH);
+      const aAbove = aOuterH - (awBot + awH);
       if (aAbove > 0) bx(g, W, aAbove, winBayD, wallCX, awBot + awH + aAbove / 2, winCZ, stM(), 'upper-wall');
 
       // Aisle window: colored glass, mullion + transom
-      const aGlassW = winBayD * 0.85;
-      const aGlassH = awH * 0.92;
+      const aGlassW = winBayD;    // fill entire opening
+      const aGlassH = awH;        // fill entire opening
       const aGlassX = wallCX - side * W * 0.4;
       const aMullX = wallCX - side * W * 0.15;
       bx(g, 0.06, aGlassH, aGlassW, aGlassX, awBot + aGlassH / 2, winCZ, glM(height, i + 3), 'glass', false);
-      // Mullion + transom
       bx(g, 0.08, aGlassH, 0.08, aMullX, awBot + aGlassH / 2, winCZ, dkM(), 'detail');
       bx(g, 0.08, 0.08, aGlassW * 0.8, aMullX, awBot + aGlassH * 0.55, winCZ, dkM(), 'detail');
-      // Sill
-      bx(g, W + 0.15, 0.12, aGlassW + 0.3, wallCX, awBot - 0.06, winCZ, dkM(), 'detail');
     }
   }
 
@@ -261,8 +258,9 @@ export function buildCathedralGeometry(params: SceneParams): Group {
   const fZ = nFront - W / 2;
   const fullW = aWallX * 2; // total facade width
 
-  // Solid facade wall — rose window sits in front of it
-  bx(g, fullW, nH, W, 0, nH / 2, fZ, stM(), 'structural');
+  // Facade wall: full width at aisle level, nave width above
+  bx(g, fullW, aH, W, 0, aH / 2, fZ, stM(), 'structural');
+  bx(g, nW + W * 2, nH - aH, W, 0, aH + (nH - aH) / 2, fZ, stM(), 'structural');
 
   // Portals
   for (let d = 0; d < 3; d++) {
@@ -347,11 +345,21 @@ export function buildCathedralGeometry(params: SceneParams): Group {
   bx(g, 0.3, 0.35, nD + W * 2, 0, nH + roofRise + 0.17, 0, dkM(), 'detail'); // ridge
 
   // ════════════════════════════════════════
-  // AISLE ROOFS (flat slabs sitting on aisle wall tops)
+  // AISLE ROOFS (sloping from nave wall down to outer wall)
   // ════════════════════════════════════════
   for (const side of [-1, 1] as const) {
-    const roofCX = side * (nWallX + aW / 2);
-    bx(g, aW + W + 0.3, 0.3, nD + 1, roofCX, aH + 0.15, 0, rfM(), 'roof');
+    const roofW = aW + W + 0.5;
+    const innerY = aH + 0.3;       // where roof meets nave wall (higher)
+    const outerY = aOuterH + 0.3;  // where roof meets outer wall (lower)
+    const midY = (innerY + outerY) / 2;
+    const midX = side * (nWallX + aW / 2);
+    const slopeLen = Math.sqrt(roofW * roofW + (innerY - outerY) ** 2);
+    const slopeAngle = Math.atan2(innerY - outerY, roofW);
+
+    const roofSlab = new Mesh(new BoxGeometry(slopeLen, 0.25, nD + 1), rfM());
+    roofSlab.position.set(midX, midY, 0);
+    roofSlab.rotation.z = -side * slopeAngle; // slope outward (down toward outer wall)
+    roofSlab.castShadow = true; roofSlab.userData.tier = 'roof'; g.add(roofSlab);
   }
 
   // ════════════════════════════════════════
@@ -404,11 +412,12 @@ export function buildCathedralGeometry(params: SceneParams): Group {
   // ════════════════════════════════════════
   // FLYING BUTTRESSES (segmented arches, 8 per side)
   // ════════════════════════════════════════
-  const fbN = 8;
-  const fbSp = nD / (fbN + 0.5);
+  // Buttresses align with nave piers (one per bay, at pier Z position)
+  const fbN = bays;
 
   for (let i = 0; i < fbN; i++) {
-    const z = nFront + fbSp * (i + 0.75);
+    // Same Z as each bay's pier center
+    const z = nFront + bayD * i + bayD * 0.25 * 0.5;
 
     for (const side of [-1, 1] as const) {
       const pierX = side * (aWallX + 3);
@@ -482,37 +491,54 @@ export function buildCathedralGeometry(params: SceneParams): Group {
   // ════════════════════════════════════════
   // TRANSEPT (seamlessly connected to nave)
   // ════════════════════════════════════════
-  const tpZ = nD * 0.1;
+  // Transept aligned with buttress positions: centered between buttress 4 and 5
+  const buttress4Z = nFront + bayD * 4 + bayD * 0.25 * 0.5; // pier Z of bay 4
+  const buttress5Z = nFront + bayD * 5 + bayD * 0.25 * 0.5; // pier Z of bay 5
+  const tpZ = (buttress4Z + buttress5Z) / 2;
   const tpArm = 10;
-  const tpH = nH * 0.82;
-  const tpD = 5;
+  const tpInnerH = aH;             // inner wall height matches aisle
+  const tpOuterH = aH * 0.7;       // end wall shorter for sloping roof
+  const tpD = bayD;  // transept width = one bay span (matches buttress spacing)
 
   for (const side of [-1, 1] as const) {
-    const innerX = side * nWallX;       // where transept meets nave
+    const innerX = side * nWallX;
     const outerX = innerX + side * tpArm;
     const midX = (innerX + outerX) / 2;
     const armLen = Math.abs(tpArm);
 
-    // North/south walls (parallel to X axis)
-    bx(g, armLen, tpH, W, midX, tpH / 2, tpZ - tpD / 2 - W / 2, stM(), 'structural');
-    bx(g, armLen, tpH, W, midX, tpH / 2, tpZ + tpD / 2 + W / 2, stM(), 'structural');
-    // End wall (perpendicular, closes the arm)
-    bx(g, W, tpH, tpD + W * 2, outerX + side * W / 2, tpH / 2, tpZ, stM(), 'structural');
+    // Side walls aligned exactly at buttress Z positions
+    bx(g, armLen, tpInnerH, W, midX, tpInnerH / 2, buttress4Z, stM(), 'structural');
+    bx(g, armLen, tpInnerH, W, midX, tpInnerH / 2, buttress5Z, stM(), 'structural');
+    // End wall (shorter for slope)
+    bx(g, W, tpOuterH, tpD + W * 2, outerX + side * W / 2, tpOuterH / 2, tpZ, stM(), 'structural');
 
-    // Transept window (recessed into end wall)
-    bx(g, 0.08, tpH * 0.3, tpD * 0.5, outerX, tpH * 0.48, tpZ, glM(height), 'glass', false);
+    // Transept end window
+    bx(g, 0.08, tpOuterH * 0.35, tpD * 0.5, outerX, tpOuterH * 0.48, tpZ, glM(height), 'glass', false);
 
     // Transept rose
-    const trR = Math.min(2.3, tpH * 0.08);
+    const trR = Math.min(2.0, tpOuterH * 0.12);
     const trRing = new Mesh(new TorusGeometry(trR, 0.12, 8, 20), stM());
-    trRing.position.set(outerX, tpH * 0.7, tpZ);
+    trRing.position.set(outerX, tpOuterH * 0.72, tpZ);
     trRing.rotation.y = Math.PI / 2; trRing.userData.tier = 'detail'; g.add(trRing);
     const trGl = new Mesh(new RingGeometry(0.1, trR - 0.08, 20), rgM(height));
-    trGl.position.set(outerX, tpH * 0.7, tpZ);
+    trGl.position.set(outerX, tpOuterH * 0.72, tpZ);
     trGl.rotation.y = Math.PI / 2; trGl.userData.tier = 'glass'; g.add(trGl);
 
-    // Transept roof (flat slab sitting on walls)
-    bx(g, armLen + 0.5, 0.3, tpD + W * 2 + 0.5, midX, tpH + 0.15, tpZ, rfM(), 'roof');
+    // Transept roof — slopes outward (higher at nave, lower at end wall)
+    const tpRoofW = armLen + 0.5;
+    const tpRoofD = tpD + W * 2 + 0.5;
+    const tpInnerY = tpInnerH + 0.3;
+    const tpOuterY = tpOuterH + 0.3;
+    const tpMidY = (tpInnerY + tpOuterY) / 2;
+    const tpSlopeLen = Math.sqrt(tpRoofW ** 2 + (tpInnerY - tpOuterY) ** 2);
+    const tpSlopeAng = Math.atan2(tpInnerY - tpOuterY, tpRoofW);
+
+    const tpRoof = new Mesh(new BoxGeometry(tpSlopeLen, 0.25, tpRoofD), rfM());
+    tpRoof.position.set(midX, tpMidY, tpZ);
+    // Slope outward: inner (nave) side high, outer (end) side low
+    // rotation.z tilts around Z axis; for transept arms extending along X:
+    tpRoof.rotation.z = -side * tpSlopeAng;
+    tpRoof.castShadow = true; tpRoof.userData.tier = 'roof'; g.add(tpRoof);
   }
 
   // ════════════════════════════════════════
@@ -524,128 +550,117 @@ export function buildCathedralGeometry(params: SceneParams): Group {
   cn(g, crW * 0.35, sH * 0.5, 4, 0, nH + crH + sH * 0.25, tpZ, rfM(), 'spire', Math.PI / 4);
 
   // ════════════════════════════════════════
-  // APSE — semicircular east end
+  // APSE — semicircular east end bulging in +Z
   //
-  // The apse replaces the center of the back wall.
-  // Inner apse (nave height) + outer ambulatory (aisle height).
-  // Walls connect to the nave walls at Z = nBack.
+  // Built by computing each facet's two corner positions on the circle,
+  // then placing a wall between them. No trig rotation — use atan2 of
+  // the actual vertex positions for rotation.
   // ════════════════════════════════════════
-  // Apse: semicircular east end bulging outward in +Z direction.
-  // Center of semicircle at (0, 0, nBack).
-  // Angles sweep from -π/2 (right/+X side) to +π/2 (left/-X side).
-  // At angle 0, the wall faces directly in +Z.
   const apN = 9;
   const apInnerR = nHW + W / 2;
   const apOuterR = aWallX;
-  const apH = nH * 0.78;
+  const apInnerH = aH;              // inner apse walls = aisle height (taller)
+  const apOuterH = aH * 0.65;       // outer ambulatory walls shorter (for slope)
   const apZ = nBack;
 
+  function apseVertex(angle: number, radius: number): [number, number] {
+    return [Math.cos(angle) * radius, Math.sin(angle) * radius + apZ];
+  }
+
+  function chordAngle(x1: number, z1: number, x2: number, z2: number): [number, number] {
+    const chord = Math.sqrt((x2 - x1) ** 2 + (z2 - z1) ** 2);
+    const angle = Math.atan2(-(z2 - z1), x2 - x1);
+    return [chord, angle];
+  }
+
   for (let i = 0; i < apN; i++) {
-    const a1 = -Math.PI / 2 + (i / apN) * Math.PI;
-    const a2 = -Math.PI / 2 + ((i + 1) / apN) * Math.PI;
-    const aMid = (a1 + a2) / 2;
-    const halfArc = Math.PI / apN / 2;
+    const ang1 = (i / apN) * Math.PI;
+    const ang2 = ((i + 1) / apN) * Math.PI;
+    const aMid = (ang1 + ang2) / 2;
 
-    // Wall segment position: on the circle at the midpoint angle
-    // The wall is tangent to the circle, so it faces outward (normal = radial)
-    // BoxGeometry flat face is in XY plane (normal along Z).
-    // rotation.y = aMid rotates so the normal points radially outward.
+    // ── Inner apse wall (taller) ──
+    const [ix1, iz1] = apseVertex(ang1, apInnerR);
+    const [ix2, iz2] = apseVertex(ang2, apInnerR);
+    const [iChord, iAngle] = chordAngle(ix1, iz1, ix2, iz2);
 
-    // ── Inner apse wall ──
-    const icx = Math.sin(aMid) * apInnerR;  // sin for X (right-hand convention)
-    const icz = Math.cos(aMid) * apInnerR + apZ;  // cos for Z (forward)
-    const iSegW = 2 * apInnerR * Math.sin(halfArc) * 1.05;
-
-    const iSeg = new Mesh(new BoxGeometry(iSegW, apH, W), stM());
-    iSeg.position.set(icx, apH / 2, icz);
-    iSeg.rotation.y = -aMid;  // rotate so face is tangent to circle
+    const iSeg = new Mesh(new BoxGeometry(iChord, apInnerH, W), stM());
+    iSeg.position.set((ix1 + ix2) / 2, apInnerH / 2, (iz1 + iz2) / 2);
+    iSeg.rotation.y = iAngle;
     iSeg.castShadow = true; iSeg.userData.tier = 'structural'; g.add(iSeg);
 
-    // Inner window (recessed)
-    const iwn = new Mesh(new BoxGeometry(iSegW * 0.4, apH * 0.3, 0.06), glM(height));
-    iwn.position.set(
-      Math.sin(aMid) * (apInnerR - 0.4),
-      apH * 0.5,
-      Math.cos(aMid) * (apInnerR - 0.4) + apZ,
-    );
-    iwn.rotation.y = -aMid;
+    // Inner window
+    const winR = apInnerR - 0.5;
+    const iwn = new Mesh(new BoxGeometry(iChord * 0.4, apInnerH * 0.3, 0.06), glM(height));
+    iwn.position.set(Math.cos(aMid) * winR, apInnerH * 0.5, Math.sin(aMid) * winR + apZ);
+    iwn.rotation.y = iAngle;
     iwn.userData.tier = 'glass'; g.add(iwn);
 
-    // ── Outer ambulatory wall ──
-    const ocx = Math.sin(aMid) * apOuterR;
-    const ocz = Math.cos(aMid) * apOuterR + apZ;
-    const oSegW = 2 * apOuterR * Math.sin(halfArc) * 1.05;
+    // ── Outer ambulatory wall (shorter) ──
+    const [ox1, oz1] = apseVertex(ang1, apOuterR);
+    const [ox2, oz2] = apseVertex(ang2, apOuterR);
+    const [oChord, oAngle] = chordAngle(ox1, oz1, ox2, oz2);
 
-    const oSeg = new Mesh(new BoxGeometry(oSegW, aH, W), stM());
-    oSeg.position.set(ocx, aH / 2, ocz);
-    oSeg.rotation.y = -aMid;
+    const oSeg = new Mesh(new BoxGeometry(oChord, apOuterH, W), stM());
+    oSeg.position.set((ox1 + ox2) / 2, apOuterH / 2, (oz1 + oz2) / 2);
+    oSeg.rotation.y = oAngle;
     oSeg.castShadow = true; oSeg.userData.tier = 'structural'; g.add(oSeg);
 
     // Ambulatory window
-    const own = new Mesh(new BoxGeometry(oSegW * 0.35, aH * 0.25, 0.05), glM(height));
-    own.position.set(
-      Math.sin(aMid) * (apOuterR - 0.4),
-      aH * 0.45,
-      Math.cos(aMid) * (apOuterR - 0.4) + apZ,
-    );
-    own.rotation.y = -aMid;
+    const oWinR = apOuterR - 0.4;
+    const own = new Mesh(new BoxGeometry(oChord * 0.35, apOuterH * 0.3, 0.05), glM(height));
+    own.position.set(Math.cos(aMid) * oWinR, apOuterH * 0.45, Math.sin(aMid) * oWinR + apZ);
+    own.rotation.y = oAngle;
     own.userData.tier = 'glass'; g.add(own);
 
     // ── Buttress at each joint ──
-    const bjR = apOuterR + 1.2;
-    const bjx = Math.sin(a2) * bjR;
-    const bjz = Math.cos(a2) * bjR + apZ;
-    bx(g, 0.9, apH * 0.5, 0.9, bjx, apH * 0.25, bjz, dkM(), 'structural');
-    pin(g, bjx, apH * 0.5 + 0.2, bjz, 2.0);
+    const [bjx, bjz] = apseVertex(ang2, apOuterR + 1.2);
+    bx(g, 0.9, apInnerH * 0.5, 0.9, bjx, apInnerH * 0.25, bjz, dkM(), 'structural');
+    pin(g, bjx, apInnerH * 0.5 + 0.2, bjz, 2.0);
   }
 
-  // Apse inner roof (one slab per facet, forming a polygon)
-  for (let i = 0; i < apN; i++) {
-    const aMid = -Math.PI / 2 + ((i + 0.5) / apN) * Math.PI;
-    const halfArc = Math.PI / apN / 2;
-    const midR = apInnerR * 0.5;
-    const rW = 2 * apInnerR * Math.sin(halfArc) * 1.08;
-    const rD = apInnerR * 0.55;
-    const rSlab = new Mesh(new BoxGeometry(rW, 0.25, rD), rfM());
-    rSlab.position.set(Math.sin(aMid) * midR, apH + 0.12, Math.cos(aMid) * midR + apZ);
-    rSlab.rotation.y = -aMid;
-    rSlab.castShadow = true; rSlab.userData.tier = 'roof'; g.add(rSlab);
-  }
+  // Apse roof: half-cone shape (higher at center, slopes down to outer wall)
+  // Uses a CylinderGeometry half-circle with different top/bottom radii to create slope.
+  // Top radius = 0 (peak at center), bottom radius = apOuterR (outer wall edge).
+  // But since we want it higher at the inner wall, we use a truncated half-cone:
+  // small radius at top (inner wall level) and larger at bottom (outer wall level).
+  const apseRoofInnerY = apInnerH + 0.2;
+  const apseRoofOuterY = apOuterH + 0.2;
+  // Inner apse roof: half-cone, vertical axis (small end up, large end down)
+  // The cone stands upright — apex at top = peak of roof, base = drip edge
+  // CylinderGeometry(topRadius, bottomRadius, height) — top is small, bottom is large
+  const innerRoofSlope = apseRoofInnerY - apseRoofOuterY + 1; // height of cone = slope amount
+  const innerConeGeo = new CylinderGeometry(0.1, apInnerR + 0.5, innerRoofSlope, apN * 2, 1, false, 0, Math.PI);
+  const innerCone = new Mesh(innerConeGeo, rfM());
+  innerCone.rotation.y = -Math.PI / 2; // rotate half-circle to open toward +Z
+  // Base (large end) sits on inner wall top, apex rises above
+  innerCone.position.set(0, apseRoofInnerY + innerRoofSlope / 2, apZ);
+  innerCone.castShadow = true; innerCone.userData.tier = 'roof'; g.add(innerCone);
 
-  // Ambulatory roof
-  for (let i = 0; i < apN; i++) {
-    const aMid = -Math.PI / 2 + ((i + 0.5) / apN) * Math.PI;
-    const halfArc = Math.PI / apN / 2;
-    const midR = (apInnerR + apOuterR) / 2;
-    const rW = 2 * midR * Math.sin(halfArc) * 1.08;
-    const rD = (apOuterR - apInnerR) + W;
-    const rSlab = new Mesh(new BoxGeometry(rW, 0.2, rD), rfM());
-    rSlab.position.set(Math.sin(aMid) * midR, aH + 0.1, Math.cos(aMid) * midR + apZ);
-    rSlab.rotation.y = -aMid;
-    rSlab.castShadow = true; rSlab.userData.tier = 'roof'; g.add(rSlab);
-  }
+  // Ambulatory roof: truncated half-cone (slopes from inner wall to outer wall)
+  const ambRoofSlope = (apseRoofInnerY - apseRoofOuterY) * 0.7;
+  const ambConeGeo = new CylinderGeometry(apInnerR + 0.3, apOuterR + W / 2, ambRoofSlope, apN * 2, 1, false, 0, Math.PI);
+  const ambCone = new Mesh(ambConeGeo, rfM());
+  ambCone.rotation.y = -Math.PI / 2;
+  // Base (large end) sits on outer wall top, apex rises above
+  ambCone.position.set(0, apseRoofOuterY + ambRoofSlope / 2, apZ);
+  ambCone.castShadow = true; ambCone.userData.tier = 'roof'; g.add(ambCone);
 
   // ════════════════════════════════════════
-  // INTERIOR COLUMNS (arcade separating nave from aisles)
+  // INTERIOR COLUMNS (at pier positions, aligned with solid wall sections)
   // ════════════════════════════════════════
   for (let i = 0; i < bays; i++) {
-    const z = nFront + bayD * (i + 0.5);
+    // Place columns at pier Z (start of each bay), not at window Z
+    const pierZ = nFront + bayD * i + bayD * 0.25 * 0.5;
     for (const side of [-1, 1] as const) {
-      // Nave arcade column
+      // Nave arcade column (compound pier)
       const cx = side * (nHW - 0.1);
       const colH = nH * 0.85;
-      cyl(g, 0.4, 0.5, colH, 16, cx, colH / 2, z, stM(), 'column');
+      cyl(g, 0.4, 0.5, colH, 16, cx, colH / 2, pierZ, stM(), 'column');
       for (const [dx, dz] of [[0.28, 0], [-0.28, 0], [0, 0.28], [0, -0.28]]) {
-        cyl(g, 0.12, 0.16, colH, 8, cx + dx, colH / 2, z + dz, dkM(), 'column');
+        cyl(g, 0.12, 0.16, colH, 8, cx + dx, colH / 2, pierZ + dz, dkM(), 'column');
       }
-      bx(g, 1.3, 0.3, 1.3, cx, 0.15, z, dkM(), 'column');
-      bx(g, 1.2, 0.4, 1.2, cx, colH + 0.2, z, stM(), 'column');
-
-      // Aisle outer column
-      const ax = side * (aOutX - 0.1);
-      const acH = aH * 0.8;
-      cyl(g, 0.2, 0.25, acH, 10, ax, acH / 2, z, stM(), 'column');
-      bx(g, 0.6, 0.2, 0.6, ax, 0.1, z, dkM(), 'column');
+      bx(g, 1.3, 0.3, 1.3, cx, 0.15, pierZ, dkM(), 'column');
+      bx(g, 1.2, 0.4, 1.2, cx, colH + 0.2, pierZ, stM(), 'column');
     }
   }
 

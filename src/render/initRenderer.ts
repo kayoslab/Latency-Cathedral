@@ -1,4 +1,4 @@
-import type { Group, Mesh, BufferGeometry, Material } from 'three';
+import type { Mesh, BufferGeometry, Material } from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
@@ -7,7 +7,7 @@ import { Vector2 } from 'three';
 import type { SceneParams } from '../domain/types';
 import { createRenderer } from './createRenderer';
 import { createScene } from './createScene';
-import { createCamera, updateCameraOrbit } from './createCamera';
+import { createCamera, createCameraControls } from './createCamera';
 import { createLights } from './createLights';
 import { rebuildCathedral } from './rebuildCathedral';
 import { applyAtmosphere } from './applyAtmosphere';
@@ -50,6 +50,9 @@ export function initRenderer(canvas: HTMLCanvasElement): RendererHandle {
   const stoneTex = createStoneTextures();
   setTextures(stoneTex.color, stoneTex.normal, stoneTex.roughness, createRoofNormalMap());
 
+  // Camera controls (mouse drag + touch)
+  const cameraControls = createCameraControls(camera, renderer.domElement);
+
   // Post-processing
   const composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
@@ -63,8 +66,9 @@ export function initRenderer(canvas: HTMLCanvasElement): RendererHandle {
   composer.addPass(bloomPass);
   composer.addPass(new OutputPass());
 
-  let cathedralGroup: Group | null = null;
-  let lastBuiltParams: SceneParams | null = null;
+  let cathedral: import('./rebuildCathedral').CathedralHandle | null = null;
+  let lastShapeParams: { height: number; symmetry: number } | null = null;
+  let lastRuinKey = '';
   let targetParams: SceneParams | null = null;
   let currentParams: SceneParams | null = null;
 
@@ -76,16 +80,21 @@ export function initRenderer(canvas: HTMLCanvasElement): RendererHandle {
 
   let animationId = 0;
   let paused = false;
-  const startTime = performance.now();
-  const GEOMETRY_REBUILD_THRESHOLD = 0.05;
+  const SHAPE_THRESHOLD = 0.08; // only rebuild geometry for significant shape changes
+  const RUIN_THRESHOLD = 0.02;  // cheaper ruin updates at finer granularity
 
-  function needsGeometryRebuild(a: SceneParams, b: SceneParams): boolean {
+  function needsShapeRebuild(p: SceneParams): boolean {
+    if (!lastShapeParams) return true;
     return (
-      Math.abs(a.height - b.height) > GEOMETRY_REBUILD_THRESHOLD ||
-      Math.abs(a.symmetry - b.symmetry) > GEOMETRY_REBUILD_THRESHOLD ||
-      Math.abs(a.fracture - b.fracture) > GEOMETRY_REBUILD_THRESHOLD ||
-      Math.abs(a.ruinLevel - b.ruinLevel) > GEOMETRY_REBUILD_THRESHOLD
+      Math.abs(lastShapeParams.height - p.height) > SHAPE_THRESHOLD ||
+      Math.abs(lastShapeParams.symmetry - p.symmetry) > SHAPE_THRESHOLD
     );
+  }
+
+  function ruinKey(p: SceneParams): string {
+    // Quantize ruin params to reduce update frequency
+    const f = (v: number) => (Math.round(v / RUIN_THRESHOLD) * RUIN_THRESHOLD).toFixed(3);
+    return `${f(p.fracture)}_${f(p.ruinLevel)}_${f(p.symmetry)}`;
   }
 
   function animate() {
@@ -93,21 +102,30 @@ export function initRenderer(canvas: HTMLCanvasElement): RendererHandle {
     animationId = requestAnimationFrame(animate);
 
     if (!reducedMotion) {
-      const elapsed = (performance.now() - startTime) / 1000;
-      updateCameraOrbit(camera, elapsed);
+      cameraControls.controls.update();
     }
 
     if (targetParams && currentParams) {
       currentParams = lerpParams(currentParams, targetParams, 0.04);
 
+      // Atmosphere: cheap, every frame
       applyAtmosphere(scene, lights, {
         fog: currentParams.fog,
         lightIntensity: currentParams.lightIntensity,
       });
 
-      if (!lastBuiltParams || needsGeometryRebuild(lastBuiltParams, currentParams)) {
-        cathedralGroup = rebuildCathedral(scene, cathedralGroup, currentParams);
-        lastBuiltParams = { ...currentParams };
+      // Geometry rebuild: only when height or symmetry change significantly
+      if (needsShapeRebuild(currentParams)) {
+        cathedral = rebuildCathedral(scene, cathedral, currentParams);
+        lastShapeParams = { height: currentParams.height, symmetry: currentParams.symmetry };
+        lastRuinKey = ruinKey(currentParams);
+      } else if (cathedral) {
+        // Ruin update: cheap reset + reapply (no geometry rebuild)
+        const rk = ruinKey(currentParams);
+        if (rk !== lastRuinKey) {
+          cathedral.applyRuin(currentParams);
+          lastRuinKey = rk;
+        }
       }
     }
 
@@ -143,8 +161,9 @@ export function initRenderer(canvas: HTMLCanvasElement): RendererHandle {
       targetParams = { ...params };
       if (!currentParams) {
         currentParams = { ...params };
-        lastBuiltParams = { ...params };
-        cathedralGroup = rebuildCathedral(scene, cathedralGroup, params);
+        cathedral = rebuildCathedral(scene, cathedral, params);
+        lastShapeParams = { height: params.height, symmetry: params.symmetry };
+        lastRuinKey = ruinKey(params);
         applyAtmosphere(scene, lights, { fog: params.fog, lightIntensity: params.lightIntensity });
       }
     },
@@ -155,8 +174,8 @@ export function initRenderer(canvas: HTMLCanvasElement): RendererHandle {
       document.removeEventListener('visibilitychange', onVisibilityChange);
       motionQuery.removeEventListener('change', onMotionChange);
 
-      if (cathedralGroup) {
-        cathedralGroup.traverse((obj) => {
+      if (cathedral) {
+        cathedral.group.traverse((obj) => {
           const mesh = obj as Mesh<BufferGeometry, Material>;
           if (mesh.isMesh) {
             mesh.geometry?.dispose();
@@ -165,6 +184,7 @@ export function initRenderer(canvas: HTMLCanvasElement): RendererHandle {
         });
       }
 
+      cameraControls.dispose();
       composer.dispose();
       renderer.dispose();
     },

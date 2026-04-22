@@ -180,6 +180,7 @@ function applyDebris(group: Group, ruinLevel: number): void {
 
     mesh.castShadow = true;
     mesh.userData.tier = 'ground';
+    mesh.userData._debris = true;
     group.add(mesh);
   }
 }
@@ -189,4 +190,40 @@ export function applyRuinModifiers(group: Group, params: SceneParams): Group {
   applyStructuralDegradation(group, params.ruinLevel, params.fracture, params.symmetry);
   applyDebris(group, params.ruinLevel);
   return group;
+}
+
+/**
+ * Reset all meshes to their stored original state.
+ * Call before re-applying ruin modifiers to avoid compounding effects.
+ */
+export function resetRuinModifiers(group: Group): void {
+  // Remove debris meshes (added dynamically by applyDebris)
+  const toRemove: Mesh[] = [];
+  for (const child of group.children) {
+    if ((child as Mesh).userData?._debris) {
+      toRemove.push(child as Mesh);
+    }
+  }
+  for (const m of toRemove) {
+    m.geometry?.dispose();
+    (m.material as MeshStandardMaterial)?.dispose();
+    group.remove(m);
+  }
+
+  // Restore original transforms + materials from stored snapshot
+  group.traverse((obj) => {
+    const mesh = obj as Mesh;
+    if (!mesh.isMesh || !mesh.userData._orig) return;
+    const o = mesh.userData._orig;
+    mesh.position.set(o.px, o.py, o.pz);
+    mesh.rotation.set(o.rx, o.ry, o.rz);
+    mesh.scale.set(o.sx, o.sy, o.sz);
+    mesh.visible = o.visible;
+
+    // Restore original material (dispose cloned one if different)
+    if (mesh.material !== o.material) {
+      (mesh.material as MeshStandardMaterial)?.dispose();
+      mesh.material = o.material;
+    }
+  });
 }
