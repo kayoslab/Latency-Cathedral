@@ -87,7 +87,8 @@
         "US-002"
       ],
       "notes": "Required for metric aggregation and mapping.",
-      "status": "available"
+      "status": "in_progress",
+      "claimed_by": "worker-2"
     },
     {
       "id": "US-006",
