@@ -22,3 +22,5 @@
 
 ## US-010: Map snapshot to cathedral scene parameters
 
+## US-015: Add reduced motion and hidden-tab throttling
+

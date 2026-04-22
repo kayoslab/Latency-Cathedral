@@ -200,7 +200,9 @@
         "US-004",
         "US-010"
       ],
-      "notes": "Main visual milestone."
+      "notes": "Main visual milestone.",
+      "status": "in_progress",
+      "claimed_by": "worker-1"
     },
     {
       "id": "US-012",
@@ -268,14 +270,13 @@
         "No duplicate timers created"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "depends_on": [
         "US-004",
         "US-009"
       ],
       "notes": "Operational quality requirement.",
-      "status": "in_progress",
-      "claimed_by": "worker-2"
+      "status": "pass"
     },
     {
       "id": "US-016",
