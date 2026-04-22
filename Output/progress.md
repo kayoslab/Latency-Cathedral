@@ -20,3 +20,5 @@
 
 ## US-009: Aggregate metrics into one normalized snapshot
 
+## US-010: Map snapshot to cathedral scene parameters
+

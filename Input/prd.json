@@ -177,13 +177,12 @@
         "Unit tests verify mappings"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "depends_on": [
         "US-009"
       ],
       "notes": "Pure logic ticket.",
-      "status": "in_progress",
-      "claimed_by": "worker-1"
+      "status": "pass"
     },
     {
       "id": "US-011",
@@ -254,7 +253,9 @@
         "US-003",
         "US-009"
       ],
-      "notes": "Developer tooling."
+      "notes": "Developer tooling.",
+      "status": "in_progress",
+      "claimed_by": "worker-3"
     },
     {
       "id": "US-015",
