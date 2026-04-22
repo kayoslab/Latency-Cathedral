@@ -7,9 +7,9 @@ vi.mock('three', () => {
   const Color = vi.fn(function Color() {});
 
   const BoxGeometry = vi.fn(function BoxGeometry(
-    _w?: number,
-    _h?: number,
-    _d?: number,
+    _w?: number, // eslint-disable-line @typescript-eslint/no-unused-vars
+    _h?: number, // eslint-disable-line @typescript-eslint/no-unused-vars
+    _d?: number, // eslint-disable-line @typescript-eslint/no-unused-vars
   ) {
     return { dispose: vi.fn(), type: 'BoxGeometry' };
   });
@@ -32,27 +32,24 @@ vi.mock('three', () => {
     };
   });
 
-  const children: unknown[] = [];
   const Group = vi.fn(function Group() {
-    return {
+    const groupChildren: unknown[] = [];
+    const group = {
       add: vi.fn((...objs: unknown[]) => {
-        children.push(...objs);
-        (this as { children: unknown[] }).children = [
-          ...(this as { children: unknown[] }).children,
-          ...objs,
-        ];
+        groupChildren.push(...objs);
       }),
-      children: [] as unknown[],
+      children: groupChildren,
       rotation: { x: 0, y: 0, z: 0 },
       isGroup: true,
-      traverse: vi.fn(function (this: { children: unknown[] }, cb: (obj: unknown) => void) {
-        cb(this);
-        for (const child of this.children) {
+      traverse: vi.fn((cb: (obj: unknown) => void) => {
+        cb(group);
+        for (const child of groupChildren) {
           cb(child);
         }
       }),
       removeFromParent: vi.fn(),
     };
+    return group;
   });
 
   return {
@@ -108,7 +105,7 @@ describe('US-011: buildCathedralGeometry', () => {
     const group = buildCathedralGeometry(makeParams());
 
     for (const child of group.children) {
-      const mesh = child as { isMesh: boolean; geometry: unknown; material: unknown };
+      const mesh = child as unknown as { isMesh: boolean; geometry: unknown; material: unknown };
       expect(mesh.isMesh).toBe(true);
       expect(mesh.geometry).toBeDefined();
       expect(mesh.material).toBeDefined();

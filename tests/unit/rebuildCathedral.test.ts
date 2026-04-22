@@ -51,24 +51,27 @@ vi.mock('three', () => {
   });
 
   const BoxGeometry = vi.fn(function BoxGeometry() {
-    return {
-      dispose: vi.fn(() => disposedGeometries.push(this)),
+    const geo = {
+      dispose: vi.fn(() => disposedGeometries.push(geo)),
       type: 'BoxGeometry',
     };
+    return geo;
   });
 
   const CylinderGeometry = vi.fn(function CylinderGeometry() {
-    return {
-      dispose: vi.fn(() => disposedGeometries.push(this)),
+    const geo = {
+      dispose: vi.fn(() => disposedGeometries.push(geo)),
       type: 'CylinderGeometry',
     };
+    return geo;
   });
 
   const MeshStandardMaterial = vi.fn(function MeshStandardMaterial() {
-    return {
-      dispose: vi.fn(() => disposedMaterials.push(this)),
+    const mat = {
+      dispose: vi.fn(() => disposedMaterials.push(mat)),
       type: 'MeshStandardMaterial',
     };
+    return mat;
   });
 
   const Mesh = vi.fn(function Mesh(geometry: unknown, material: unknown) {
@@ -83,22 +86,22 @@ vi.mock('three', () => {
 
   const Group = vi.fn(function Group() {
     const groupChildren: unknown[] = [];
-    return {
+    const group = {
       add: vi.fn((...objs: unknown[]) => {
         groupChildren.push(...objs);
-        (this as { children: unknown[] }).children = groupChildren;
       }),
       children: groupChildren,
       rotation: { x: 0, y: 0, z: 0 },
       isGroup: true,
-      traverse: vi.fn(function (this: { children: unknown[] }, cb: (obj: unknown) => void) {
-        cb(this);
-        for (const child of this.children ?? groupChildren) {
+      traverse: vi.fn((cb: (obj: unknown) => void) => {
+        cb(group);
+        for (const child of groupChildren) {
           cb(child);
         }
       }),
       removeFromParent: vi.fn(),
     };
+    return group;
   });
 
   return {

@@ -19,6 +19,7 @@ vi.mock('three', () => {
   const Scene = vi.fn(function Scene() {
     return {
       add: vi.fn(),
+      remove: vi.fn(),
       background: null,
     };
   });
@@ -50,6 +51,12 @@ vi.mock('three', () => {
     };
   });
 
+  const CylinderGeometry = vi.fn(function CylinderGeometry() {
+    return {
+      dispose: vi.fn(),
+    };
+  });
+
   const MeshStandardMaterial = vi.fn(function MeshStandardMaterial() {
     return {
       dispose: vi.fn(),
@@ -59,9 +66,31 @@ vi.mock('three', () => {
   const Mesh = vi.fn(function Mesh(geometry: unknown, material: unknown) {
     return {
       rotation: { x: 0, y: 0 },
+      position: { set: vi.fn(), x: 0, y: 0, z: 0 },
       geometry,
       material,
+      isMesh: true,
     };
+  });
+
+  const Group = vi.fn(function Group() {
+    const groupChildren: unknown[] = [];
+    const group = {
+      add: vi.fn((...objs: unknown[]) => {
+        groupChildren.push(...objs);
+      }),
+      children: groupChildren,
+      rotation: { x: 0, y: 0, z: 0 },
+      isGroup: true,
+      traverse: vi.fn((cb: (obj: unknown) => void) => {
+        cb(group);
+        for (const child of groupChildren) {
+          cb(child);
+        }
+      }),
+      removeFromParent: vi.fn(),
+    };
+    return group;
   });
 
   return {
@@ -72,8 +101,10 @@ vi.mock('three', () => {
     AmbientLight,
     DirectionalLight,
     BoxGeometry,
+    CylinderGeometry,
     MeshStandardMaterial,
     Mesh,
+    Group,
   };
 });
 

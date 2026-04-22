@@ -1,11 +1,15 @@
+import type { Group, Mesh, BufferGeometry, Material } from 'three';
+import type { SceneParams } from '../domain/types';
 import { createRenderer } from './createRenderer';
 import { createScene } from './createScene';
 import { createCamera } from './createCamera';
 import { createLights } from './createLights';
-import { createPlaceholderMesh } from './createPlaceholderMesh';
+import { rebuildCathedral } from './rebuildCathedral';
+import { sceneParamsChanged } from './sceneParamsChanged';
 
 export interface RendererHandle {
   dispose: () => void;
+  update: (params: SceneParams) => void;
 }
 
 export function initRenderer(canvas: HTMLCanvasElement): RendererHandle {
@@ -13,11 +17,12 @@ export function initRenderer(canvas: HTMLCanvasElement): RendererHandle {
   const scene = createScene();
   const camera = createCamera(window.innerWidth, window.innerHeight);
   const { ambient, directional } = createLights();
-  const mesh = createPlaceholderMesh();
 
   scene.add(ambient);
   scene.add(directional);
-  scene.add(mesh);
+
+  let cathedralGroup: Group | null = null;
+  let lastParams: SceneParams | null = null;
 
   let reducedMotion = false;
   const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -34,9 +39,8 @@ export function initRenderer(canvas: HTMLCanvasElement): RendererHandle {
     if (paused) return;
     animationId = requestAnimationFrame(animate);
 
-    if (!reducedMotion) {
-      mesh.rotation.x += 0.005;
-      mesh.rotation.y += 0.01;
+    if (!reducedMotion && cathedralGroup) {
+      cathedralGroup.rotation.y += 0.003;
     }
 
     renderer.render(scene, camera);
@@ -63,14 +67,30 @@ export function initRenderer(canvas: HTMLCanvasElement): RendererHandle {
   animate();
 
   return {
+    update(params: SceneParams) {
+      if (lastParams && !sceneParamsChanged(lastParams, params)) {
+        return;
+      }
+      cathedralGroup = rebuildCathedral(scene, cathedralGroup, params);
+      lastParams = { ...params };
+    },
+
     dispose() {
       cancelAnimationFrame(animationId);
       window.removeEventListener('resize', onResize);
       document.removeEventListener('visibilitychange', onVisibilityChange);
       motionQuery.removeEventListener('change', onMotionChange);
 
-      mesh.geometry.dispose();
-      (mesh.material as import('three').MeshStandardMaterial).dispose();
+      if (cathedralGroup) {
+        cathedralGroup.traverse((obj) => {
+          const mesh = obj as Mesh<BufferGeometry, Material>;
+          if (mesh.isMesh) {
+            mesh.geometry?.dispose();
+            mesh.material?.dispose();
+          }
+        });
+      }
+
       renderer.dispose();
     },
   };
