@@ -14,6 +14,17 @@ export interface NetworkSnapshot {
   timestampMs: number;
 }
 
+export interface ResourceTimingEntry {
+  name: string;
+  duration: number;
+  transferSize: number;
+  encodedBodySize: number;
+  decodedBodySize: number;
+  startTime: number;
+  responseEnd: number;
+  timestampMs: number;
+}
+
 export interface SceneParams {
   height: number;
   symmetry: number;

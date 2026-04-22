@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { clamp, normalizeRtt, normalizeJitter } from '../../../src/domain/normalize';
 
 describe('US-005: normalization helpers', () => {
@@ -138,6 +138,106 @@ describe('US-005: normalization helpers', () => {
       const result = normalizeJitter(100);
       expect(result).toBeGreaterThan(0);
       expect(result).toBeLessThanOrEqual(1);
+    });
+  });
+
+  // ── US-008: normalizeLoadDuration ─────────────────────────────────
+
+  describe('normalizeLoadDuration()', () => {
+    let normalizeLoadDuration: typeof import('../../../src/domain/normalize').normalizeLoadDuration;
+
+    beforeEach(async () => {
+      ({ normalizeLoadDuration } = await import(
+        '../../../src/domain/normalize'
+      ));
+    });
+
+    it('returns 0 for zero duration', () => {
+      expect(normalizeLoadDuration(0)).toBe(0);
+    });
+
+    it('returns 1 for duration at default max (5000ms)', () => {
+      expect(normalizeLoadDuration(5000)).toBe(1);
+    });
+
+    it('returns 0.5 for duration at midpoint of default range', () => {
+      expect(normalizeLoadDuration(2500)).toBe(0.5);
+    });
+
+    it('clamps duration above max to 1', () => {
+      expect(normalizeLoadDuration(10000)).toBe(1);
+    });
+
+    it('clamps negative duration to 0', () => {
+      expect(normalizeLoadDuration(-100)).toBe(0);
+    });
+
+    it('returns 0 for NaN', () => {
+      expect(normalizeLoadDuration(NaN)).toBe(0);
+    });
+
+    it('returns 1 for Infinity', () => {
+      expect(normalizeLoadDuration(Infinity)).toBe(1);
+    });
+
+    it('returns 0 for -Infinity', () => {
+      expect(normalizeLoadDuration(-Infinity)).toBe(0);
+    });
+
+    it('accepts a custom max', () => {
+      expect(normalizeLoadDuration(50, 100)).toBe(0.5);
+      expect(normalizeLoadDuration(100, 100)).toBe(1);
+      expect(normalizeLoadDuration(0, 100)).toBe(0);
+    });
+
+    it('clamps beyond custom max to 1', () => {
+      expect(normalizeLoadDuration(200, 100)).toBe(1);
+    });
+  });
+
+  // ── US-008: computeMeanDuration ───────────────────────────────────
+
+  describe('computeMeanDuration()', () => {
+    let computeMeanDuration: typeof import('../../../src/domain/normalize').computeMeanDuration;
+
+    beforeEach(async () => {
+      ({ computeMeanDuration } = await import(
+        '../../../src/domain/normalize'
+      ));
+    });
+
+    it('returns 0 for an empty array', () => {
+      expect(computeMeanDuration([])).toBe(0);
+    });
+
+    it('returns the single value for an array with one entry', () => {
+      expect(computeMeanDuration([42])).toBe(42);
+    });
+
+    it('computes the mean of multiple values', () => {
+      expect(computeMeanDuration([10, 20, 30])).toBe(20);
+    });
+
+    it('filters out NaN values', () => {
+      expect(computeMeanDuration([10, NaN, 30])).toBe(20);
+    });
+
+    it('filters out Infinity values', () => {
+      expect(computeMeanDuration([10, Infinity, 30])).toBe(20);
+    });
+
+    it('filters out -Infinity values', () => {
+      expect(computeMeanDuration([10, -Infinity, 30])).toBe(20);
+    });
+
+    it('returns 0 when all values are non-finite', () => {
+      expect(computeMeanDuration([NaN, Infinity, -Infinity])).toBe(0);
+    });
+
+    it('handles typical resource timing durations', () => {
+      const durations = [45.5, 120.3, 88.7, 200.1];
+      const expected = (45.5 + 120.3 + 88.7 + 200.1) / 4;
+      expect(computeMeanDuration(durations)).toBeCloseTo(expected);
     });
   });
 });
