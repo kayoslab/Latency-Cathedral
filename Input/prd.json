@@ -201,7 +201,8 @@
         "US-010"
       ],
       "notes": "Main visual milestone.",
-      "status": "fail"
+      "status": "in_progress",
+      "claimed_by": "worker-3"
     },
     {
       "id": "US-012",
@@ -249,13 +250,13 @@
         "HUD can be toggled"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "depends_on": [
         "US-003",
         "US-009"
       ],
       "notes": "Developer tooling.",
-      "status": "available"
+      "status": "pass"
     },
     {
       "id": "US-015",

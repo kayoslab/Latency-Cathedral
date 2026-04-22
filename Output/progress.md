@@ -24,3 +24,5 @@
 
 ## US-015: Add reduced motion and hidden-tab throttling
 
+## US-014: Add debug HUD
+
