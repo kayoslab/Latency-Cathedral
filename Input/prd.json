@@ -137,14 +137,13 @@
         "Unsupported browsers available gracefully"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "depends_on": [
         "US-005",
         "US-007"
       ],
       "notes": "Secondary telemetry source.",
-      "status": "in_progress",
-      "claimed_by": "worker-3"
+      "status": "pass"
     },
     {
       "id": "US-009",
@@ -309,7 +308,9 @@
         "US-004",
         "US-006"
       ],
-      "notes": "Recommended before launch."
+      "notes": "Recommended before launch.",
+      "status": "in_progress",
+      "claimed_by": "worker-2"
     }
   ]
 }

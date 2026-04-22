@@ -12,3 +12,5 @@
 
 ## US-006: Add deterministic fast, mixed, and poor presets
 
+## US-008: Collect resource timing metrics
+
