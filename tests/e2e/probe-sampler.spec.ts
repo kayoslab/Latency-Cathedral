@@ -29,6 +29,7 @@ test.describe('US-007: same-origin latency probe sampler', () => {
 
     const snapshot = await page.evaluate(async () => {
       // Dynamically import the sampler module
+      // @ts-expect-error Vite resolves this at runtime in the browser
       const { ProbeSampler } = await import('/src/metrics/probeSampler.ts');
       const sampler = new ProbeSampler({ intervalMs: 200, windowSize: 5 });
       sampler.start();
@@ -57,6 +58,7 @@ test.describe('US-007: same-origin latency probe sampler', () => {
     await page.goto('/');
 
     const urls = await page.evaluate(async () => {
+      // @ts-expect-error Vite resolves this at runtime in the browser
       const { fetchProbe } = await import('/src/metrics/probeSampler.ts');
       const sample1 = await fetchProbe('/probe.txt');
       // Small delay to ensure different timestamp
@@ -81,6 +83,7 @@ test.describe('US-007: same-origin latency probe sampler', () => {
     await page.goto('/');
 
     await page.evaluate(async () => {
+      // @ts-expect-error Vite resolves this at runtime in the browser
       const { ProbeSampler } = await import('/src/metrics/probeSampler.ts');
       const sampler = new ProbeSampler({ intervalMs: 300 });
       sampler.start();
