@@ -1,0 +1,1 @@
+{"test_results":"pass","failures":[],"tests_added":["tests/unit/domain/qualityBand.test.ts","tests/unit/ui/debugHud.test.ts","tests/unit/ui/keyboardToggle.test.ts","tests/e2e/debugHud.spec.ts"],"tests_modified":[]}
