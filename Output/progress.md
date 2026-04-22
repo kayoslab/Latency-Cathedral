@@ -26,3 +26,5 @@
 
 ## US-014: Add debug HUD
 
+## US-011: Generate base cathedral geometry
+

@@ -195,14 +195,13 @@
         "No leaked disposed meshes"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "depends_on": [
         "US-004",
         "US-010"
       ],
       "notes": "Main visual milestone.",
-      "status": "in_progress",
-      "claimed_by": "worker-3"
+      "status": "pass"
     },
     {
       "id": "US-012",
