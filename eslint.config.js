@@ -11,6 +11,7 @@ export default tseslint.config(
     files: ['tests/**/*.ts'],
     rules: {
       '@typescript-eslint/no-require-imports': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
     },
   },
 );
