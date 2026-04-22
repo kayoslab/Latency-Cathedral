@@ -30,3 +30,5 @@
 
 ## US-012: Add ruin modifiers for degraded connections
 
+## US-013: Add atmosphere, fog, and lighting moods
+

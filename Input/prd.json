@@ -232,14 +232,13 @@
         "Palette changes do not recreate renderer"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "depends_on": [
         "US-010",
         "US-011"
       ],
       "notes": "Polish layer.",
-      "status": "in_progress",
-      "claimed_by": "worker-3"
+      "status": "pass"
     },
     {
       "id": "US-014",
