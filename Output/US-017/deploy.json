@@ -1,0 +1,1 @@
+{"decision":"pass","gates_checked":["lint","typecheck","tests","e2e"],"failures":[],"notes":"All gates green. Lint clean, typecheck clean, 152 unit tests passed, 27 e2e tests passed (including 5 US-017 smoke tests covering app load, canvas visibility, preset switching, active class, and post-switch rendering)."}
