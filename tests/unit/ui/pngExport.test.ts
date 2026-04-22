@@ -19,6 +19,7 @@ describe('US-016: pngExport', () => {
   afterEach(() => {
     document.body.innerHTML = '';
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
     vi.resetModules();
   });
 
@@ -35,9 +36,8 @@ describe('US-016: pngExport', () => {
     const { initPngExport } = await loadModule();
     initPngExport(overlay, canvas);
 
-    const toBlobSpy = vi.fn((_cb: BlobCallback, _type?: string) => {
-      // call the callback with a fake blob
-      _cb(new Blob(['fake'], { type: 'image/png' }));
+    const toBlobSpy = vi.fn((cb: BlobCallback) => {
+      cb(new Blob(['fake'], { type: 'image/png' }));
     });
     canvas.toBlob = toBlobSpy;
 
