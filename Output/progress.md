@@ -32,3 +32,5 @@
 
 ## US-013: Add atmosphere, fog, and lighting moods
 
+## US-016: Add PNG export and shareable preset URLs
+

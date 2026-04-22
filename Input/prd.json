@@ -289,15 +289,14 @@
         "No crash if clipboard unavailable"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "depends_on": [
         "US-006",
         "US-011",
         "US-014"
       ],
       "notes": "Good public-facing feature.",
-      "status": "in_progress",
-      "claimed_by": "worker-2"
+      "status": "pass"
     },
     {
       "id": "US-017",
