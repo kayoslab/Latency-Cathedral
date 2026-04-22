@@ -1,1 +1,1 @@
-{"test_results":"pass","failures":[],"tests_added":["tests/unit/metrics/probeSampler.test.ts","tests/e2e/probe-sampler.spec.ts"],"tests_modified":[]}
+{"test_results":"pass","failures":[],"tests_added":["tests/unit/metrics/probeSampler.test.ts","tests/e2e/probe-sampler.spec.ts"],"tests_modified":[],"failure_source":null}
