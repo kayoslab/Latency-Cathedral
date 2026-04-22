@@ -5,7 +5,8 @@ import { createScene } from './createScene';
 import { createCamera } from './createCamera';
 import { createLights } from './createLights';
 import { rebuildCathedral } from './rebuildCathedral';
-import { sceneParamsChanged } from './sceneParamsChanged';
+import { sceneParamsChanged, geometryParamsChanged } from './sceneParamsChanged';
+import { applyAtmosphere } from './applyAtmosphere';
 
 export interface RendererHandle {
   dispose: () => void;
@@ -16,7 +17,8 @@ export function initRenderer(canvas: HTMLCanvasElement): RendererHandle {
   const renderer = createRenderer(canvas);
   const scene = createScene();
   const camera = createCamera(window.innerWidth, window.innerHeight);
-  const { ambient, directional } = createLights();
+  const lights = createLights();
+  const { ambient, directional } = lights;
 
   scene.add(ambient);
   scene.add(directional);
@@ -71,7 +73,10 @@ export function initRenderer(canvas: HTMLCanvasElement): RendererHandle {
       if (lastParams && !sceneParamsChanged(lastParams, params)) {
         return;
       }
-      cathedralGroup = rebuildCathedral(scene, cathedralGroup, params);
+      if (!lastParams || geometryParamsChanged(lastParams, params)) {
+        cathedralGroup = rebuildCathedral(scene, cathedralGroup, params);
+      }
+      applyAtmosphere(scene, lights, { fog: params.fog, lightIntensity: params.lightIntensity });
       lastParams = { ...params };
     },
 

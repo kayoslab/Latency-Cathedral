@@ -88,8 +88,8 @@ describe('US-013: applyAtmosphere', () => {
 
     applyAtmosphere(scene as unknown as import('three').Scene, lights as unknown as import('../../src/render/createLights').Lights, { fog: 0, lightIntensity: 0.5 });
 
-    expect(scene.fog!.near).toBe(50);
-    expect(scene.fog!.far).toBe(100);
+    expect((scene.fog as unknown as { near: number; far: number }).near).toBe(50);
+    expect((scene.fog as unknown as { near: number; far: number }).far).toBe(100);
   });
 
   it('fog=1 produces near/dense fog (near=1, far=8)', () => {
@@ -98,8 +98,8 @@ describe('US-013: applyAtmosphere', () => {
 
     applyAtmosphere(scene as unknown as import('three').Scene, lights as unknown as import('../../src/render/createLights').Lights, { fog: 1, lightIntensity: 0.5 });
 
-    expect(scene.fog!.near).toBe(1);
-    expect(scene.fog!.far).toBe(8);
+    expect((scene.fog as unknown as { near: number; far: number }).near).toBe(1);
+    expect((scene.fog as unknown as { near: number; far: number }).far).toBe(8);
   });
 
   it('fog=0.5 interpolates fog near/far linearly', () => {
@@ -110,8 +110,8 @@ describe('US-013: applyAtmosphere', () => {
 
     // near: 50 + (1 - 50) * 0.5 = 25.5
     // far: 100 + (8 - 100) * 0.5 = 54
-    expect(scene.fog!.near).toBeCloseTo(25.5, 1);
-    expect(scene.fog!.far).toBeCloseTo(54, 1);
+    expect((scene.fog as unknown as { near: number; far: number }).near).toBeCloseTo(25.5, 1);
+    expect((scene.fog as unknown as { near: number; far: number }).far).toBeCloseTo(54, 1);
   });
 
   // ── Light intensity boundary values ──

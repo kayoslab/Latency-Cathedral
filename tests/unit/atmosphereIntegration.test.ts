@@ -149,6 +149,7 @@ describe('US-013: fog/lightIntensity changes do not trigger geometry rebuild', (
   let canvas: HTMLCanvasElement;
 
   beforeEach(async () => {
+    vi.clearAllMocks();
     vi.resetModules();
     vi.useFakeTimers();
 
