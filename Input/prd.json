@@ -82,12 +82,12 @@
         "Unit tests cover edge cases"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "depends_on": [
         "US-002"
       ],
       "notes": "Required for metric aggregation and mapping.",
-      "status": "available"
+      "status": "pass"
     },
     {
       "id": "US-006",

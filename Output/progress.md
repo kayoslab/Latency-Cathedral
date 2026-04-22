@@ -6,3 +6,5 @@
 
 ## US-002: Add linting, typecheck, and unit test scripts
 
+## US-005: Define domain models for metrics and visuals
+
