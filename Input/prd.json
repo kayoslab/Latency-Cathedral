@@ -201,8 +201,7 @@
         "US-010"
       ],
       "notes": "Main visual milestone.",
-      "status": "in_progress",
-      "claimed_by": "worker-1"
+      "status": "fail"
     },
     {
       "id": "US-012",
@@ -256,8 +255,7 @@
         "US-009"
       ],
       "notes": "Developer tooling.",
-      "status": "in_progress",
-      "claimed_by": "worker-3"
+      "status": "available"
     },
     {
       "id": "US-015",
