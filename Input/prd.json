@@ -163,7 +163,9 @@
         "US-007",
         "US-008"
       ],
-      "notes": "Core integration point."
+      "notes": "Core integration point.",
+      "status": "in_progress",
+      "claimed_by": "worker-1"
     },
     {
       "id": "US-010",
@@ -301,7 +303,7 @@
         "Tests run from npm script"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "depends_on": [
         "US-002",
         "US-003",
@@ -309,8 +311,7 @@
         "US-006"
       ],
       "notes": "Recommended before launch.",
-      "status": "in_progress",
-      "claimed_by": "worker-2"
+      "status": "pass"
     }
   ]
 }

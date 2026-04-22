@@ -14,3 +14,5 @@
 
 ## US-008: Collect resource timing metrics
 
+## US-017: Add browser smoke tests
+
