@@ -26,6 +26,7 @@ vi.mock('three', () => {
   const Scene = vi.fn(function Scene() {
     return {
       add: vi.fn(),
+      remove: vi.fn(),
       background: null,
     };
   });
@@ -53,6 +54,10 @@ vi.mock('three', () => {
     return { dispose: vi.fn() };
   });
 
+  const CylinderGeometry = vi.fn(function CylinderGeometry() {
+    return { dispose: vi.fn() };
+  });
+
   const MeshStandardMaterial = vi.fn(function MeshStandardMaterial() {
     return { dispose: vi.fn() };
   });
@@ -60,9 +65,31 @@ vi.mock('three', () => {
   const Mesh = vi.fn(function Mesh(geometry: unknown, material: unknown) {
     return {
       rotation: { x: 0, y: 0 },
+      position: { set: vi.fn(), x: 0, y: 0, z: 0 },
       geometry,
       material,
+      isMesh: true,
     };
+  });
+
+  const Group = vi.fn(function Group() {
+    const groupChildren: unknown[] = [];
+    const group = {
+      add: vi.fn((...objs: unknown[]) => {
+        groupChildren.push(...objs);
+      }),
+      children: groupChildren,
+      rotation: { x: 0, y: 0, z: 0 },
+      isGroup: true,
+      traverse: vi.fn((cb: (obj: unknown) => void) => {
+        cb(group);
+        for (const child of groupChildren) {
+          cb(child);
+        }
+      }),
+      removeFromParent: vi.fn(),
+    };
+    return group;
   });
 
   return {
@@ -73,8 +100,10 @@ vi.mock('three', () => {
     AmbientLight,
     DirectionalLight,
     BoxGeometry,
+    CylinderGeometry,
     MeshStandardMaterial,
     Mesh,
+    Group,
   };
 });
 
@@ -156,19 +185,20 @@ describe('US-015: reduced-motion handling in initRenderer', () => {
 
     const handle = initRenderer(canvas);
 
-    // initRenderer calls animate() which schedules a rAF
-    // The first rAF callback should rotate the mesh
+    // Build cathedral group so rotation applies to it
     const THREE = await import('three');
-    const meshInstance = (THREE.Mesh as unknown as ReturnType<typeof vi.fn>).mock.results[0]?.value;
+    handle.update({
+      height: 0.8, symmetry: 0.9, fracture: 0.1,
+      fog: 0.2, lightIntensity: 0.8, ruinLevel: 0.1,
+    });
+    const groupInstance = (THREE.Group as unknown as ReturnType<typeof vi.fn>).mock.results[0]?.value;
 
-    const initialX = meshInstance.rotation.x;
-    const initialY = meshInstance.rotation.y;
+    const initialY = groupInstance.rotation.y;
 
     // Step one frame
     stepFrame();
 
-    expect(meshInstance.rotation.x).toBeGreaterThan(initialX);
-    expect(meshInstance.rotation.y).toBeGreaterThan(initialY);
+    expect(groupInstance.rotation.y).toBeGreaterThan(initialY);
 
     handle.dispose();
   });
@@ -180,16 +210,18 @@ describe('US-015: reduced-motion handling in initRenderer', () => {
     const handle = initRenderer(canvas);
 
     const THREE = await import('three');
-    const meshInstance = (THREE.Mesh as unknown as ReturnType<typeof vi.fn>).mock.results[0]?.value;
+    handle.update({
+      height: 0.8, symmetry: 0.9, fracture: 0.1,
+      fog: 0.2, lightIntensity: 0.8, ruinLevel: 0.1,
+    });
+    const groupInstance = (THREE.Group as unknown as ReturnType<typeof vi.fn>).mock.results[0]?.value;
 
-    const initialX = meshInstance.rotation.x;
-    const initialY = meshInstance.rotation.y;
+    const initialY = groupInstance.rotation.y;
 
     // Step one frame
     stepFrame();
 
-    expect(meshInstance.rotation.x).toBe(initialX);
-    expect(meshInstance.rotation.y).toBe(initialY);
+    expect(groupInstance.rotation.y).toBe(initialY);
 
     handle.dispose();
   });
@@ -216,22 +248,26 @@ describe('US-015: reduced-motion handling in initRenderer', () => {
     const handle = initRenderer(canvas);
 
     const THREE = await import('three');
-    const meshInstance = (THREE.Mesh as unknown as ReturnType<typeof vi.fn>).mock.results[0]?.value;
+    handle.update({
+      height: 0.8, symmetry: 0.9, fracture: 0.1,
+      fog: 0.2, lightIntensity: 0.8, ruinLevel: 0.1,
+    });
+    const groupInstance = (THREE.Group as unknown as ReturnType<typeof vi.fn>).mock.results[0]?.value;
 
     // Initially rotation happens
     stepFrame();
-    expect(meshInstance.rotation.x).toBeGreaterThan(0);
+    expect(groupInstance.rotation.y).toBeGreaterThan(0);
 
     // Simulate user enabling reduced motion
     if (motionChangeHandler) {
       motionChangeHandler({ matches: true });
     }
 
-    const xAfterEnable = meshInstance.rotation.x;
+    const yAfterEnable = groupInstance.rotation.y;
     stepFrame();
 
     // Rotation should NOT increase further
-    expect(meshInstance.rotation.x).toBe(xAfterEnable);
+    expect(groupInstance.rotation.y).toBe(yAfterEnable);
 
     handle.dispose();
   });

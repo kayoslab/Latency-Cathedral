@@ -45,21 +45,25 @@ visibilityManager.onVisible(() => {
 const debugHud = createDebugHud(overlay);
 const keyboardToggle = createKeyboardToggle('`', () => debugHud.toggle());
 
-// Seed HUD with initial snapshot so it has content before first aggregator tick
+// Seed HUD with initial snapshot and build initial cathedral geometry
 {
   const initialSnapshot = aggregator.getSnapshot();
-  debugHud.update(initialSnapshot, mapSnapshotToScene(initialSnapshot));
+  const initialScene = mapSnapshotToScene(initialSnapshot);
+  debugHud.update(initialSnapshot, initialScene);
+  renderer.update(initialScene);
 }
 
 aggregator.subscribe((snapshot) => {
-  const scene = mapSnapshotToScene(snapshot);
-  debugHud.update(snapshot, scene);
-  console.log('[aggregator] snapshot → scene', scene);
+  const sceneParams = mapSnapshotToScene(snapshot);
+  debugHud.update(snapshot, sceneParams);
+  renderer.update(sceneParams);
+  console.log('[aggregator] snapshot → scene', sceneParams);
 });
 
 presetState.subscribe((snapshot, name) => {
-  const scene = mapSnapshotToScene(snapshot);
-  debugHud.update(snapshot, scene);
+  const sceneParams = mapSnapshotToScene(snapshot);
+  debugHud.update(snapshot, sceneParams);
+  renderer.update(sceneParams);
   console.log(`[preset] ${name}`, snapshot);
 });
 

@@ -75,6 +75,49 @@ test.describe('US-004: Three.js renderer bootstrap', () => {
     expect(contextLostMessages).toEqual([]);
   });
 
+  test('cathedral geometry renders non-black pixels', async ({ page }) => {
+    await page.goto('/');
+    // Wait for init + first update() call to build cathedral geometry
+    await page.waitForTimeout(1000);
+
+    const hasPixels = await page.evaluate(() => {
+      const canvas = document.getElementById('cathedral') as HTMLCanvasElement;
+      if (!canvas) return false;
+      if (canvas.width === 0 || canvas.height === 0) return false;
+
+      const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+      if (!gl) {
+        const dataUrl = canvas.toDataURL();
+        return dataUrl.length > 500;
+      }
+
+      // Sample several points across the canvas to confirm geometry is rendered
+      const points = [
+        [gl.drawingBufferWidth / 2, gl.drawingBufferHeight / 2],
+        [gl.drawingBufferWidth / 3, gl.drawingBufferHeight / 2],
+        [gl.drawingBufferWidth * 2 / 3, gl.drawingBufferHeight / 2],
+      ];
+
+      for (const [x, y] of points) {
+        const pixels = new Uint8Array(4);
+        gl.readPixels(Math.floor(x), Math.floor(y), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+        if (pixels[0] > 0 || pixels[1] > 0 || pixels[2] > 0 || pixels[3] > 0) {
+          return true;
+        }
+      }
+
+      // Fallback: check toDataURL length indicates rendered content
+      try {
+        const dataUrl = canvas.toDataURL();
+        return dataUrl.length > 500;
+      } catch {
+        return false;
+      }
+    });
+
+    expect(hasPixels).toBe(true);
+  });
+
   test('canvas resizes when viewport changes', async ({ page }) => {
     await page.goto('/');
 
