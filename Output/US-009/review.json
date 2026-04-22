@@ -1,0 +1,1 @@
+{"approved":true,"concerns":["Step 4: `estimateBandwidth` returns Mbps but `NetworkSnapshot.bandwidth` is typed as 0–1 range. Either normalize the value (e.g., clamp(throughput / maxExpectedMbps, 0, 1)) or update the type contract. Leaving raw Mbps in a 0–1 field is a latent bug for any future consumer."]}
