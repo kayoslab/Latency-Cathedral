@@ -104,7 +104,9 @@
       "depends_on": [
         "US-005"
       ],
-      "notes": "Useful early for parallel visual development."
+      "notes": "Useful early for parallel visual development.",
+      "status": "in_progress",
+      "claimed_by": "worker-2"
     },
     {
       "id": "US-007",
@@ -117,12 +119,13 @@
         "Rolling jitter is calculated"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "depends_on": [
         "US-001",
         "US-005"
       ],
-      "notes": "Primary live telemetry path."
+      "notes": "Primary live telemetry path.",
+      "status": "pass"
     },
     {
       "id": "US-008",

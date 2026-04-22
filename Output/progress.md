@@ -8,3 +8,5 @@
 
 ## US-005: Define domain models for metrics and visuals
 
+## US-007: Implement same-origin latency probe sampler
+
