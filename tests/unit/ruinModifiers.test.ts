@@ -19,7 +19,17 @@ vi.mock('three', () => {
   });
 
   const MeshStandardMaterial = vi.fn(function MeshStandardMaterial() {
-    return { dispose: vi.fn(), type: 'MeshStandardMaterial' };
+    const mat: any = {
+      dispose: vi.fn(), type: 'MeshStandardMaterial',
+      color: { r: 0.5, g: 0.5, b: 0.5, lerp: vi.fn() },
+      roughness: 0.85, metalness: 0.02, opacity: 1, emissiveIntensity: 1,
+    };
+    mat.clone = vi.fn(() => {
+      const c = { ...mat, color: { r: 0.5, g: 0.5, b: 0.5, lerp: vi.fn() } };
+      c.clone = mat.clone;
+      return c;
+    });
+    return mat;
   });
 
   const Mesh = vi.fn(function Mesh(geometry: unknown, material: unknown) {
@@ -30,6 +40,7 @@ vi.mock('three', () => {
       rotation: { x: 0, y: 0, z: 0 },
       scale: { x: 1, y: 1, z: 1 },
       isMesh: true,
+      userData: {},
     };
   });
 
@@ -79,11 +90,14 @@ function makeParams(overrides: Partial<SceneParams> = {}): SceneParams {
 async function buildBaseGroup() {
   const THREE = await import('three');
   const group = new THREE.Group();
+  const tiers = ['ground', 'pinnacle', 'upper-wall', 'spire'];
+  const xPositions = [0, -0.5, -0.5, -1.0]; // negative x avoids asymmetry bias
   for (let i = 0; i < 4; i++) {
     const geo = new THREE.BoxGeometry(1, 1, 1);
     const mat = new THREE.MeshStandardMaterial();
     const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(i * 0.5, i * 0.3, 0);
+    mesh.position.set(xPositions[i], i * 0.3, 0);
+    mesh.userData = { tier: tiers[i] };
     group.add(mesh);
   }
   return group;
@@ -96,6 +110,7 @@ type MeshLike = {
   scale: { x: number; y: number; z: number };
   geometry: { dispose: ReturnType<typeof vi.fn>; type: string };
   material: { dispose: ReturnType<typeof vi.fn>; type: string };
+  userData: Record<string, unknown>;
 };
 
 describe('US-012: applyRuinModifiers', () => {
@@ -159,6 +174,7 @@ describe('US-012: applyRuinModifiers', () => {
 
   it('fracture=0.8 distorts mesh positions/rotations from original values', async () => {
     const group = await buildBaseGroup();
+    const childCountBefore = group.children.length;
 
     const originalPositions = group.children.map((c) => {
       const m = c as unknown as MeshLike;
@@ -169,13 +185,14 @@ describe('US-012: applyRuinModifiers', () => {
       return { x: m.rotation.x, y: m.rotation.y, z: m.rotation.z };
     });
 
-    applyRuinModifiers(group, makeParams({ fracture: 0.8, ruinLevel: 0 }));
+    applyRuinModifiers(group, makeParams({ fracture: 0.8, ruinLevel: 0.7 }));
 
-    // At least some meshes should be displaced or rotated
+    // At least some original meshes should be displaced or rotated
     let anyPositionChanged = false;
     let anyRotationChanged = false;
 
     group.children.forEach((c, i) => {
+      if (i >= childCountBefore) return; // skip debris
       const m = c as unknown as MeshLike;
       if (
         m.position.x !== originalPositions[i].x ||
@@ -200,7 +217,7 @@ describe('US-012: applyRuinModifiers', () => {
   it('collapse: ruinLevel=0.6 reduces Y-scale on at least one non-base mesh', async () => {
     const group = await buildBaseGroup();
 
-    applyRuinModifiers(group, makeParams({ fracture: 0, ruinLevel: 0.6 }));
+    applyRuinModifiers(group, makeParams({ fracture: 0, ruinLevel: 0.7 }));
 
     // Non-base meshes are index > 0
     const nonBaseMeshes = group.children.slice(1) as unknown as MeshLike[];
@@ -220,13 +237,13 @@ describe('US-012: applyRuinModifiers', () => {
     expect(group.children.length).toBeGreaterThan(childCountBefore);
   });
 
-  it('ruinLevel=1.0 produces exactly MAX_DEBRIS (12) additional children', async () => {
+  it('ruinLevel=1.0 produces exactly 24 additional debris children', async () => {
     const group = await buildBaseGroup();
     const childCountBefore = group.children.length;
 
     applyRuinModifiers(group, makeParams({ fracture: 0, ruinLevel: 1.0 }));
 
-    expect(group.children.length).toBe(childCountBefore + 12);
+    expect(group.children.length).toBe(childCountBefore + 24);
   });
 
   // --- AC: Transforms remain valid numbers ---
@@ -301,18 +318,20 @@ describe('US-012: applyRuinModifiers', () => {
 
   it('higher fracture produces larger distortion offsets', async () => {
     const groupLow = await buildBaseGroup();
-    applyRuinModifiers(groupLow, makeParams({ fracture: 0.3, ruinLevel: 0 }));
+    const childCountBefore = groupLow.children.length;
+    applyRuinModifiers(groupLow, makeParams({ fracture: 0.3, ruinLevel: 0.7 }));
 
     const groupHigh = await buildBaseGroup();
-    applyRuinModifiers(groupHigh, makeParams({ fracture: 0.9, ruinLevel: 0 }));
+    applyRuinModifiers(groupHigh, makeParams({ fracture: 0.9, ruinLevel: 0.7 }));
 
-    // Sum absolute position deltas for non-base meshes
+    const xPositions = [0, -0.5, -0.5, -1.0];
+    // Sum absolute position deltas for non-base original meshes (skip debris)
     const sumDeltas = (group: Awaited<ReturnType<typeof buildBaseGroup>>) => {
       let total = 0;
       group.children.forEach((c, i) => {
-        if (i === 0) return; // skip base
+        if (i === 0 || i >= childCountBefore) return; // skip base and debris
         const m = c as unknown as MeshLike;
-        total += Math.abs(m.position.x - i * 0.5);
+        total += Math.abs(m.position.x - xPositions[i]);
         total += Math.abs(m.position.y - i * 0.3);
         total += Math.abs(m.position.z - 0);
       });

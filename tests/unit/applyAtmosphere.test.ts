@@ -42,11 +42,24 @@ vi.mock('three', () => {
     this.fog = null;
   });
 
+  const PointLight = vi.fn(function PointLight(this: { intensity: number; isLight: boolean; position: { set: ReturnType<typeof vi.fn> } }, _color?: number, intensity?: number) {
+    this.intensity = intensity ?? 1;
+    this.isLight = true;
+    this.position = { set: vi.fn() };
+  });
+
+  const HemisphereLight = vi.fn(function HemisphereLight(this: { intensity: number; isLight: boolean }, _skyColor?: number, _groundColor?: number, intensity?: number) {
+    this.intensity = intensity ?? 1;
+    this.isLight = true;
+  });
+
   return {
     Color,
     Fog,
     AmbientLight,
     DirectionalLight,
+    PointLight,
+    HemisphereLight,
     Scene,
   };
 });
@@ -68,38 +81,44 @@ describe('US-013: applyAtmosphere', () => {
 
   function createTestScene() {
     const scene = new THREE.Scene();
-    scene.fog = new THREE.Fog(0x0a0a0f, 50, 100);
-    scene.background = new THREE.Color(0x0a0a0f);
+    scene.fog = new THREE.Fog(0xd5d0c8, 200, 600);
+    scene.background = new THREE.Color(0xd5d0c8);
     return scene;
   }
 
   function createTestLights() {
+    const rim = new THREE.DirectionalLight(0x4466aa, 0.3);
+    const interior = new (THREE as unknown as { PointLight: new (...args: unknown[]) => { intensity: number } }).PointLight(0xffaa44, 0.8, 8, 2);
+    const hemisphere = new (THREE as unknown as { HemisphereLight: new (...args: unknown[]) => { intensity: number } }).HemisphereLight(0x445566, 0x222211, 0.3);
     return {
       ambient: new THREE.AmbientLight(0xffffff, 0.4),
       directional: new THREE.DirectionalLight(0xffffff, 0.8),
+      rim,
+      interior,
+      hemisphere,
     };
   }
 
   // ── Fog boundary values ──
 
-  it('fog=0 produces far/transparent fog (near=50, far=100)', () => {
+  it('fog=0 produces far/transparent fog (near=200, far=600)', () => {
     const scene = createTestScene();
     const lights = createTestLights();
 
     applyAtmosphere(scene as unknown as import('three').Scene, lights as unknown as import('../../src/render/createLights').Lights, { fog: 0, lightIntensity: 0.5 });
 
-    expect((scene.fog as unknown as { near: number; far: number }).near).toBe(50);
-    expect((scene.fog as unknown as { near: number; far: number }).far).toBe(100);
+    expect((scene.fog as unknown as { near: number; far: number }).near).toBe(200);
+    expect((scene.fog as unknown as { near: number; far: number }).far).toBe(600);
   });
 
-  it('fog=1 produces near/dense fog (near=1, far=8)', () => {
+  it('fog=1 produces near/dense fog (near=80, far=250)', () => {
     const scene = createTestScene();
     const lights = createTestLights();
 
     applyAtmosphere(scene as unknown as import('three').Scene, lights as unknown as import('../../src/render/createLights').Lights, { fog: 1, lightIntensity: 0.5 });
 
-    expect((scene.fog as unknown as { near: number; far: number }).near).toBe(1);
-    expect((scene.fog as unknown as { near: number; far: number }).far).toBe(8);
+    expect((scene.fog as unknown as { near: number; far: number }).near).toBe(80);
+    expect((scene.fog as unknown as { near: number; far: number }).far).toBe(250);
   });
 
   it('fog=0.5 interpolates fog near/far linearly', () => {
@@ -108,10 +127,10 @@ describe('US-013: applyAtmosphere', () => {
 
     applyAtmosphere(scene as unknown as import('three').Scene, lights as unknown as import('../../src/render/createLights').Lights, { fog: 0.5, lightIntensity: 0.5 });
 
-    // near: 50 + (1 - 50) * 0.5 = 25.5
-    // far: 100 + (8 - 100) * 0.5 = 54
-    expect((scene.fog as unknown as { near: number; far: number }).near).toBeCloseTo(25.5, 1);
-    expect((scene.fog as unknown as { near: number; far: number }).far).toBeCloseTo(54, 1);
+    // near: 200 + (80 - 200) * 0.5 = 140
+    // far: 600 + (250 - 600) * 0.5 = 425
+    expect((scene.fog as unknown as { near: number; far: number }).near).toBeCloseTo(140, 1);
+    expect((scene.fog as unknown as { near: number; far: number }).far).toBeCloseTo(425, 1);
   });
 
   // ── Light intensity boundary values ──
@@ -122,10 +141,10 @@ describe('US-013: applyAtmosphere', () => {
 
     applyAtmosphere(scene as unknown as import('three').Scene, lights as unknown as import('../../src/render/createLights').Lights, { fog: 0, lightIntensity: 1 });
 
-    // ambient: 0.15 + (0.6 - 0.15) * 1 = 0.6
-    // directional: 0.3 + (1.0 - 0.3) * 1 = 1.0
-    expect(lights.ambient.intensity).toBeCloseTo(0.6, 2);
-    expect(lights.directional.intensity).toBeCloseTo(1.0, 2);
+    // ambient: 0.15 + (0.5 - 0.15) * 1 = 0.5
+    // directional: 0.3 + (1.8 - 0.3) * 1 = 1.8
+    expect(lights.ambient.intensity).toBeCloseTo(0.5, 2);
+    expect(lights.directional.intensity).toBeCloseTo(1.8, 2);
   });
 
   it('lightIntensity=0 maps to dim ambient and directional', () => {
@@ -145,15 +164,15 @@ describe('US-013: applyAtmosphere', () => {
 
     applyAtmosphere(scene as unknown as import('three').Scene, lights as unknown as import('../../src/render/createLights').Lights, { fog: 0, lightIntensity: 0.5 });
 
-    // ambient: 0.15 + (0.6 - 0.15) * 0.5 = 0.375
-    // directional: 0.3 + (1.0 - 0.3) * 0.5 = 0.65
-    expect(lights.ambient.intensity).toBeCloseTo(0.375, 2);
-    expect(lights.directional.intensity).toBeCloseTo(0.65, 2);
+    // ambient: 0.15 + (0.5 - 0.15) * 0.5 = 0.325
+    // directional: 0.3 + (1.8 - 0.3) * 0.5 = 1.05
+    expect(lights.ambient.intensity).toBeCloseTo(0.325, 2);
+    expect(lights.directional.intensity).toBeCloseTo(1.05, 2);
   });
 
   // ── Background color ──
 
-  it('fog=0 sets background to clean color (0x1a1a2e)', () => {
+  it('fog=0 sets background to clean color (0xd5d0c8)', () => {
     const scene = createTestScene();
     const lights = createTestLights();
 
@@ -162,13 +181,13 @@ describe('US-013: applyAtmosphere', () => {
     // background should be lerped toward clean color (fog=0 → clean)
     const bg = scene.background as { r: number; g: number; b: number };
     expect(bg).toBeDefined();
-    // 0x1a1a2e → r=26/255≈0.102, g=26/255≈0.102, b=46/255≈0.180
-    expect(bg.r).toBeCloseTo(0x1a / 255, 1);
-    expect(bg.g).toBeCloseTo(0x1a / 255, 1);
-    expect(bg.b).toBeCloseTo(0x2e / 255, 1);
+    // 0xd5d0c8 → r=213/255≈0.835, g=208/255≈0.816, b=200/255≈0.784
+    expect(bg.r).toBeCloseTo(0xd5 / 255, 1);
+    expect(bg.g).toBeCloseTo(0xd0 / 255, 1);
+    expect(bg.b).toBeCloseTo(0xc8 / 255, 1);
   });
 
-  it('fog=1 sets background to murky color (0x050508)', () => {
+  it('fog=1 sets background to murky color (0x4a4540)', () => {
     const scene = createTestScene();
     const lights = createTestLights();
 
@@ -176,10 +195,10 @@ describe('US-013: applyAtmosphere', () => {
 
     const bg = scene.background as { r: number; g: number; b: number };
     expect(bg).toBeDefined();
-    // 0x050508 → r=5/255≈0.020, g=5/255≈0.020, b=8/255≈0.031
-    expect(bg.r).toBeCloseTo(0x05 / 255, 1);
-    expect(bg.g).toBeCloseTo(0x05 / 255, 1);
-    expect(bg.b).toBeCloseTo(0x08 / 255, 1);
+    // 0x4a4540 → r=74/255≈0.290, g=69/255≈0.271, b=64/255≈0.251
+    expect(bg.r).toBeCloseTo(0x4a / 255, 1);
+    expect(bg.g).toBeCloseTo(0x45 / 255, 1);
+    expect(bg.b).toBeCloseTo(0x40 / 255, 1);
   });
 
   // ── Mutation (no recreation) ──

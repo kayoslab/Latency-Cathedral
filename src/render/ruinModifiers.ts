@@ -1,106 +1,192 @@
 /**
- * Ruin modifiers for degraded connections (US-012).
+ * Tiered architectural weathering system.
  *
- * Applies fracture distortion, section collapse, and debris generation
- * to an existing cathedral Group based on SceneParams.
- *
- * RUIN_THRESHOLD = 0.15 rationale:
- *  - Fast preset: fracture≈0.007, ruinLevel≈0.009 → well below → no-op
- *  - Default makeParams: fracture=0.1, ruinLevel=0.1 → below → no-op
- *  - Mixed preset: fracture≈0.24, ruinLevel≈0.19 → above → visible ruin
+ * Uses mesh.userData.tier tags to apply realistic degradation:
+ * - 0.0–0.2: pristine
+ * - 0.2–0.4: weathered stone, slight tilts
+ * - 0.4–0.6: missing pinnacles/glass, moss tint, debris
+ * - 0.6–0.8: collapsed roof/walls, leaning structures, heavy debris
+ * - 0.8–1.0: post-apocalyptic ruins, only lower walls remain
  */
 import {
   Group,
   Mesh,
   BoxGeometry,
   MeshStandardMaterial,
+  Color,
 } from 'three';
 import type { SceneParams } from '../domain/types';
 
-const RUIN_THRESHOLD = 0.15;
-const MAX_DEBRIS = 12;
-const MAX_POSITION_OFFSET = 0.3;
-const MAX_ROTATION_OFFSET = 0.15;
+type Tier = 'ground' | 'structural' | 'upper-wall' | 'roof' | 'glass' | 'pinnacle' | 'spire' | 'detail' | 'column';
 
-/** Deterministic pseudo-random from seed, returns value in [0, 1). */
-function seededRandom(seed: number): number {
+// At what ruinLevel each tier starts being REMOVED.
+// Much higher thresholds — the cathedral always remains recognizable.
+// Only decorative elements disappear at moderate ruin.
+const TIER_THRESHOLDS: Record<Tier, number> = {
+  ground: 1.1,       // never removed
+  structural: 1.1,   // never removed — the walls always stand
+  column: 1.1,       // columns always stand
+  'upper-wall': 0.9, // only the very top walls crumble at extreme ruin
+  roof: 0.85,        // roof starts failing only at heavy degradation
+  glass: 0.5,        // windows break at moderate degradation
+  detail: 0.4,       // moldings, tracery erode
+  pinnacle: 0.3,     // pinnacles are fragile, go first
+  spire: 0.8,        // spires survive a long time
+};
+
+// Weathered stone colors (progressively darker/dirtier)
+const WEATHERED_STONE = new Color(0x706050);
+const RUINED_STONE = new Color(0x3a3530);
+const MOSS_TINT = new Color(0x3a4a30);
+
+function srand(seed: number): number {
   const x = Math.sin(seed * 9301 + 49297) * 49297;
   return x - Math.floor(x);
 }
 
-/** Ensure a value is finite, defaulting to 0 if not. */
 function safeFinite(v: number): number {
   return Number.isFinite(v) ? v : 0;
 }
 
-function applyFractureDistortion(group: Group, fracture: number): void {
-  if (fracture < RUIN_THRESHOLD) return;
+/** Weathering: darken and roughen materials. */
+function applyMaterialWeathering(group: Group, ruinLevel: number): void {
+  if (ruinLevel < 0.15) return;
 
-  const effective = (fracture - RUIN_THRESHOLD) / (1 - RUIN_THRESHOLD);
+  const weatherAmount = Math.min((ruinLevel - 0.15) / 0.6, 1);
+
+  group.traverse((obj) => {
+    const mesh = obj as Mesh;
+    if (!mesh.isMesh) return;
+    const tier = mesh.userData.tier as Tier;
+    if (tier === 'ground' || tier === 'glass') return;
+
+    const mat = mesh.material as MeshStandardMaterial;
+    if (!mat.color) return;
+
+    // Clone material so we don't mutate shared instances
+    const newMat = mat.clone();
+
+    // Darken toward weathered stone
+    const targetColor = weatherAmount > 0.6 ? RUINED_STONE : WEATHERED_STONE;
+    newMat.color.lerp(targetColor, weatherAmount * 0.7);
+
+    // Add moss tint on lower elements
+    if (tier === 'structural' || tier === 'column' || tier === 'detail') {
+      newMat.color.lerp(MOSS_TINT, weatherAmount * 0.2);
+    }
+
+    // Increase roughness (weathered stone is rougher)
+    newMat.roughness = Math.min(newMat.roughness + weatherAmount * 0.15, 1.0);
+
+    mesh.material = newMat;
+  });
+}
+
+/** Structural degradation: hide, tilt, and collapse elements by tier. */
+function applyStructuralDegradation(group: Group, ruinLevel: number, fracture: number, symmetry: number): void {
+  if (ruinLevel < 0.15) return;
+
   const children = group.children;
+  const asymmetry = 1 - symmetry; // higher = more asymmetric decay
 
   for (let i = 0; i < children.length; i++) {
-    const child = children[i];
-    if (!(child as Mesh).isMesh) continue;
-    const mesh = child as Mesh;
+    const mesh = children[i] as Mesh;
+    if (!mesh.isMesh) continue;
 
-    const dx = safeFinite((seededRandom(i * 3 + 1) * 2 - 1) * MAX_POSITION_OFFSET * effective);
-    const dy = safeFinite((seededRandom(i * 3 + 2) * 2 - 1) * MAX_POSITION_OFFSET * effective);
-    const dz = safeFinite((seededRandom(i * 3 + 3) * 2 - 1) * MAX_POSITION_OFFSET * effective);
+    const tier = mesh.userData.tier as Tier;
+    if (!tier || tier === 'ground') continue;
 
-    mesh.position.x = safeFinite(mesh.position.x + dx);
-    mesh.position.y = safeFinite(mesh.position.y + dy);
-    mesh.position.z = safeFinite(mesh.position.z + dz);
+    const threshold = TIER_THRESHOLDS[tier] ?? 1;
+    const seed = i * 7 + 13;
+    const rand = srand(seed);
 
-    mesh.rotation.x = safeFinite(mesh.rotation.x + (seededRandom(i * 3 + 4) * 2 - 1) * MAX_ROTATION_OFFSET * effective);
-    mesh.rotation.y = safeFinite(mesh.rotation.y + (seededRandom(i * 3 + 5) * 2 - 1) * MAX_ROTATION_OFFSET * effective);
-    mesh.rotation.z = safeFinite(mesh.rotation.z + (seededRandom(i * 3 + 6) * 2 - 1) * MAX_ROTATION_OFFSET * effective);
+    // Asymmetric bias: elements on one side (x > 0) have lower effective threshold
+    const sideBias = mesh.position.x > 0 ? asymmetry * 0.15 : 0;
+    const effectiveThreshold = threshold - sideBias - rand * 0.15;
+
+    if (ruinLevel > effectiveThreshold) {
+      // Element is destroyed — hide it
+      mesh.visible = false;
+      continue;
+    }
+
+    // Element survives but may be damaged
+    const damageLevel = Math.max(0, (ruinLevel - effectiveThreshold * 0.5) / (effectiveThreshold * 0.5));
+    if (damageLevel <= 0) continue;
+
+    // Tilt tall elements (spires, pinnacles, upper walls)
+    if (tier === 'spire' || tier === 'pinnacle' || tier === 'upper-wall') {
+      const tiltAmount = damageLevel * 0.15 * (1 + fracture * 0.5);
+      mesh.rotation.x += safeFinite((srand(seed + 1) * 2 - 1) * tiltAmount);
+      mesh.rotation.z += safeFinite((srand(seed + 2) * 2 - 1) * tiltAmount);
+    }
+
+    // Slight position displacement (more with higher fracture)
+    if (fracture > 0.2 && damageLevel > 0.3) {
+      const dispScale = damageLevel * fracture * 2.0;
+      mesh.position.x += safeFinite((srand(seed + 3) * 2 - 1) * dispScale);
+      mesh.position.y += safeFinite((srand(seed + 4) * 2 - 1) * dispScale * 0.3);
+      mesh.position.z += safeFinite((srand(seed + 5) * 2 - 1) * dispScale);
+    }
+
+    // Partial collapse (scale down Y) for roofs and upper walls
+    if ((tier === 'roof' || tier === 'upper-wall') && damageLevel > 0.4) {
+      const collapseAmount = (damageLevel - 0.4) / 0.6;
+      mesh.scale.y = safeFinite(1 - collapseAmount * 0.5 * srand(seed + 6));
+      mesh.position.y -= collapseAmount * 2 * srand(seed + 7);
+    }
+
+    // Dim glass emissivity on damaged windows
+    if (tier === 'glass' && damageLevel > 0.2) {
+      const mat = mesh.material as MeshStandardMaterial;
+      const newMat = mat.clone();
+      newMat.emissiveIntensity *= (1 - damageLevel * 0.8);
+      newMat.opacity = Math.max(0.3, newMat.opacity - damageLevel * 0.4);
+      mesh.material = newMat;
+    }
   }
 }
 
-function applyCollapse(group: Group, ruinLevel: number): void {
-  if (ruinLevel < 0.5) return;
+/** Generate debris around the cathedral base. */
+function applyDebris(group: Group, ruinLevel: number): void {
+  if (ruinLevel < 0.25) return;
 
-  const collapseAmount = (ruinLevel - 0.5) / 0.5; // 0 at 0.5, 1 at 1.0
-  const children = group.children;
+  const effective = (ruinLevel - 0.25) / 0.75;
+  const debrisCount = Math.floor(effective * 24);
 
-  for (let i = 1; i < children.length; i++) {
-    const child = children[i];
-    if (!(child as Mesh).isMesh) continue;
-    const mesh = child as Mesh;
-
-    const factor = seededRandom(i * 7 + 13) * 0.6 * collapseAmount;
-    mesh.scale.y = safeFinite(1 - factor);
-  }
-}
-
-function applyRuinDebris(group: Group, ruinLevel: number): void {
-  if (ruinLevel < RUIN_THRESHOLD) return;
-
-  const effective = (ruinLevel - RUIN_THRESHOLD) / (1 - RUIN_THRESHOLD);
-  const debrisCount = Math.floor(effective * MAX_DEBRIS);
+  // Debris material — dark weathered stone
+  const debrisMat = new MeshStandardMaterial({
+    color: WEATHERED_STONE,
+    roughness: 0.9,
+    metalness: 0.01,
+  });
 
   for (let i = 0; i < debrisCount; i++) {
-    const geo = new BoxGeometry(0.15, 0.1, 0.15);
-    const mat = new MeshStandardMaterial({ color: 0x444455 });
-    const mesh = new Mesh(geo, mat);
+    // Varied sizes — some large blocks, some small rubble
+    const isLarge = srand(i * 5 + 200) > 0.7;
+    const scale = isLarge ? 1.5 + srand(i * 5 + 201) * 3.0 : 0.4 + srand(i * 5 + 201) * 1.0;
+    const geo = new BoxGeometry(scale, scale * (0.3 + srand(i * 5 + 202) * 0.5), scale * (0.5 + srand(i * 5 + 203) * 0.5));
+    const mesh = new Mesh(geo, debrisMat);
 
-    const px = safeFinite((seededRandom(i * 5 + 100) * 2 - 1) * 2);
-    const py = safeFinite(seededRandom(i * 5 + 101) * 0.5);
-    const pz = safeFinite((seededRandom(i * 5 + 102) * 2 - 1) * 2);
-    mesh.position.set(px, py, pz);
+    // Scatter near the cathedral footprint
+    const px = safeFinite((srand(i * 5 + 100) * 2 - 1) * 35);
+    const py = safeFinite(srand(i * 5 + 101) * scale * 0.5);
+    const pz = safeFinite((srand(i * 5 + 102) * 2 - 1) * 35);
+    mesh.position.set(px, py + 1, pz);
 
-    mesh.rotation.x = safeFinite(seededRandom(i * 5 + 103) * Math.PI);
-    mesh.rotation.y = safeFinite(seededRandom(i * 5 + 104) * Math.PI);
-    mesh.rotation.z = safeFinite(seededRandom(i * 5 + 105) * Math.PI);
+    mesh.rotation.x = safeFinite(srand(i * 5 + 103) * 0.5);
+    mesh.rotation.y = safeFinite(srand(i * 5 + 104) * Math.PI);
+    mesh.rotation.z = safeFinite(srand(i * 5 + 105) * 0.5);
 
+    mesh.castShadow = true;
+    mesh.userData.tier = 'ground';
     group.add(mesh);
   }
 }
 
 export function applyRuinModifiers(group: Group, params: SceneParams): Group {
-  applyFractureDistortion(group, params.fracture);
-  applyCollapse(group, params.ruinLevel);
-  applyRuinDebris(group, params.ruinLevel);
+  applyMaterialWeathering(group, params.ruinLevel);
+  applyStructuralDegradation(group, params.ruinLevel, params.fracture, params.symmetry);
+  applyDebris(group, params.ruinLevel);
   return group;
 }

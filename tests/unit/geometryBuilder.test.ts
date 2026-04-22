@@ -6,20 +6,31 @@ import type { SceneParams } from '../../src/domain/types';
 vi.mock('three', () => {
   const Color = vi.fn(function Color() {});
 
-  const BoxGeometry = vi.fn(function BoxGeometry(
-    _w?: number, // eslint-disable-line @typescript-eslint/no-unused-vars
-    _h?: number, // eslint-disable-line @typescript-eslint/no-unused-vars
-    _d?: number, // eslint-disable-line @typescript-eslint/no-unused-vars
-  ) {
-    return { dispose: vi.fn(), type: 'BoxGeometry' };
+  const makeGeo = (type: string) => vi.fn(function Geo() {
+    return { dispose: vi.fn(), type };
   });
 
-  const CylinderGeometry = vi.fn(function CylinderGeometry() {
-    return { dispose: vi.fn(), type: 'CylinderGeometry' };
-  });
+  const BoxGeometry = makeGeo('BoxGeometry');
+  const CylinderGeometry = makeGeo('CylinderGeometry');
+  const ConeGeometry = makeGeo('ConeGeometry');
+  const PlaneGeometry = makeGeo('PlaneGeometry');
+  const ExtrudeGeometry = makeGeo('ExtrudeGeometry');
+  const TubeGeometry = makeGeo('TubeGeometry');
+  const TorusGeometry = makeGeo('TorusGeometry');
+  const RingGeometry = makeGeo('RingGeometry');
 
   const MeshStandardMaterial = vi.fn(function MeshStandardMaterial() {
-    return { dispose: vi.fn(), type: 'MeshStandardMaterial' };
+    const mat: any = {
+      dispose: vi.fn(), type: 'MeshStandardMaterial',
+      color: { r: 0.5, g: 0.5, b: 0.5, lerp: vi.fn() },
+      roughness: 0.85, metalness: 0.02, opacity: 1, emissiveIntensity: 1,
+    };
+    mat.clone = vi.fn(() => {
+      const c = { ...mat, color: { r: 0.5, g: 0.5, b: 0.5, lerp: vi.fn() } };
+      c.clone = mat.clone;
+      return c;
+    });
+    return mat;
   });
 
   const Mesh = vi.fn(function Mesh(geometry: unknown, material: unknown) {
@@ -29,7 +40,10 @@ vi.mock('three', () => {
       position: { set: vi.fn(function set(this: { x: number; y: number; z: number }, x: number, y: number, z: number) { this.x = x; this.y = y; this.z = z; }), x: 0, y: 0, z: 0 },
       rotation: { x: 0, y: 0, z: 0 },
       scale: { x: 1, y: 1, z: 1 },
+      castShadow: false,
+      receiveShadow: false,
       isMesh: true,
+      userData: {},
     };
   });
 
@@ -53,13 +67,42 @@ vi.mock('three', () => {
     return group;
   });
 
+  const Shape = vi.fn(function Shape() {
+    return {
+      moveTo: vi.fn(),
+      lineTo: vi.fn(),
+      quadraticCurveTo: vi.fn(),
+      closePath: vi.fn(),
+    };
+  });
+
+  const Vector3 = vi.fn(function Vector3(x = 0, y = 0, z = 0) {
+    return { x, y, z };
+  });
+
+  const QuadraticBezierCurve3 = vi.fn(function QuadraticBezierCurve3() {
+    return {};
+  });
+
+  const DoubleSide = 2;
+
   return {
     Color,
     BoxGeometry,
     CylinderGeometry,
+    ConeGeometry,
+    PlaneGeometry,
+    ExtrudeGeometry,
+    TubeGeometry,
+    TorusGeometry,
+    RingGeometry,
     MeshStandardMaterial,
     Mesh,
     Group,
+    Shape,
+    Vector3,
+    QuadraticBezierCurve3,
+    DoubleSide,
   };
 });
 
@@ -95,11 +138,12 @@ describe('US-011: buildCathedralGeometry', () => {
     expect(group.isGroup).toBe(true);
   });
 
-  it('group contains at least 3 children (base, nave, towers)', () => {
+  it('group contains many children (ground, base, nave, towers, buttresses, windows, etc.)', () => {
     const group = buildCathedralGeometry(makeParams());
 
-    // Base + nave + at least 2 towers = 4, but spec says "at least 3"
-    expect(group.children.length).toBeGreaterThanOrEqual(3);
+    // Full gothic cathedral: ground + base + nave + transept + towers + spires +
+    // buttresses + piers + windows + rose window + columns + apse = many meshes
+    expect(group.children.length).toBeGreaterThanOrEqual(20);
   });
 
   it('all children are Mesh instances with geometry and material', () => {
@@ -231,26 +275,30 @@ describe('US-012: buildCathedralGeometry with ruin modifiers', () => {
     vi.restoreAllMocks();
   });
 
-  it('default makeParams (fracture=0.1, ruinLevel=0.1) still produces exactly 4 children — no US-011 regression', () => {
-    const group = buildCathedralGeometry(makeParams());
+  it('default makeParams (fracture=0.1, ruinLevel=0.1) produces clean cathedral — no debris added', () => {
+    const cleanGroup = buildCathedralGeometry(makeParams({ fracture: 0, ruinLevel: 0 }));
+    const defaultGroup = buildCathedralGeometry(makeParams());
 
-    // Base + nave + 2 towers = 4; below RUIN_THRESHOLD so no debris added
-    expect(group.children.length).toBe(4);
+    // Below RUIN_THRESHOLD so no debris added — same child count as clean
+    expect(defaultGroup.children.length).toBe(cleanGroup.children.length);
   });
 
-  it('fast preset values (fracture=0.007, ruinLevel=0.009) produce exactly 4 children — fast state clean', () => {
-    const group = buildCathedralGeometry(makeParams({ fracture: 0.007, ruinLevel: 0.009 }));
+  it('fast preset values (fracture=0.007, ruinLevel=0.009) produce clean cathedral — no debris', () => {
+    const cleanGroup = buildCathedralGeometry(makeParams({ fracture: 0, ruinLevel: 0 }));
+    const fastGroup = buildCathedralGeometry(makeParams({ fracture: 0.007, ruinLevel: 0.009 }));
 
-    expect(group.children.length).toBe(4);
+    expect(fastGroup.children.length).toBe(cleanGroup.children.length);
   });
 
-  it('poor-like values (fracture=0.8, ruinLevel=0.8) produce more than 4 children (debris added)', () => {
-    const group = buildCathedralGeometry(makeParams({ fracture: 0.8, ruinLevel: 0.8 }));
+  it('poor-like values (fracture=0.8, ruinLevel=0.8) produce same base geometry — ruin applied separately', () => {
+    const cleanGroup = buildCathedralGeometry(makeParams({ fracture: 0, ruinLevel: 0 }));
+    const ruinGroup = buildCathedralGeometry(makeParams({ fracture: 0.8, ruinLevel: 0.8 }));
 
-    expect(group.children.length).toBeGreaterThan(4);
+    // Ruin modifiers are now decoupled from buildCathedralGeometry — same base mesh count
+    expect(ruinGroup.children.length).toBe(cleanGroup.children.length);
   });
 
-  it('poor-like values produce group with distorted positions', () => {
+  it('poor-like values produce same base positions — ruin applied separately', () => {
     // Build clean cathedral for reference
     const cleanGroup = buildCathedralGeometry(makeParams({ fracture: 0, ruinLevel: 0 }));
     const cleanPositions = cleanGroup.children.map((c) => {
@@ -258,23 +306,23 @@ describe('US-012: buildCathedralGeometry with ruin modifiers', () => {
       return { x: m.position.x, y: m.position.y, z: m.position.z };
     });
 
-    // Build ruined cathedral
+    // Build with ruin params — ruin modifiers are now decoupled
     const ruinGroup = buildCathedralGeometry(makeParams({ fracture: 0.8, ruinLevel: 0.9 }));
 
-    // At least one of the original 4 meshes should have a different position
-    let anyDistorted = false;
-    for (let i = 0; i < Math.min(4, ruinGroup.children.length); i++) {
+    // Positions should be identical since ruin modifiers are applied separately
+    let allSame = true;
+    for (let i = 1; i < Math.min(6, ruinGroup.children.length); i++) {
       const m = ruinGroup.children[i] as { position: { x: number; y: number; z: number } };
       if (
         m.position.x !== cleanPositions[i].x ||
         m.position.y !== cleanPositions[i].y ||
         m.position.z !== cleanPositions[i].z
       ) {
-        anyDistorted = true;
+        allSame = false;
         break;
       }
     }
 
-    expect(anyDistorted).toBe(true);
+    expect(allSame).toBe(true);
   });
 });

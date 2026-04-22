@@ -4,6 +4,7 @@ import { PRESET_SNAPSHOTS } from './presets';
 
 export interface PresetState {
   select(name: PresetName): NetworkSnapshot;
+  clear(): void;
   current(): { name: PresetName; snapshot: NetworkSnapshot } | null;
   subscribe(cb: (snapshot: NetworkSnapshot, name: PresetName) => void): () => void;
 }
@@ -20,6 +21,10 @@ export function createPresetState(initial?: PresetName): PresetState {
         cb(snapshot, name);
       }
       return snapshot;
+    },
+
+    clear(): void {
+      activeName = null;
     },
 
     current() {

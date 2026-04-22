@@ -1,6 +1,7 @@
 import type { Scene, Group, Mesh, BufferGeometry, Material } from 'three';
 import type { SceneParams } from '../domain/types';
 import { buildCathedralGeometry } from './buildCathedralGeometry';
+import { applyRuinModifiers } from './ruinModifiers';
 
 export function rebuildCathedral(
   scene: Scene,
@@ -19,6 +20,7 @@ export function rebuildCathedral(
   }
 
   const newGroup = buildCathedralGeometry(params);
+  applyRuinModifiers(newGroup, params);
   scene.add(newGroup);
   return newGroup;
 }
