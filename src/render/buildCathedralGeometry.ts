@@ -179,27 +179,15 @@ export function buildCathedralGeometry(params: SceneParams): Group {
       // Glass panel (colored per bay)
       bx(g, 0.08, glassH, glassW, glassX, gCY, glassZ, glM(height, i), 'glass', false);
 
-      // Stone frame / reveal (jambs + lintel on wall face)
-      const fmD = 0.15;
-      for (const zOff of [-glassW / 2 - fmD / 2, glassW / 2 + fmD / 2]) {
-        bx(g, W * 0.3, glassH + fmD, fmD, wallCX, gCY, glassZ + zOff, dkM(), 'detail');
-      }
-      bx(g, W * 0.3, fmD, glassW + fmD * 2, wallCX, gBot + glassH + fmD / 2, glassZ, dkM(), 'detail');
-
-      // Tracery: 3 major mullions dividing into 4 lancets (full height of frame)
+      // Tracery sits between glass and wall face — all at mullionX, no overlapping pieces
+      // 3 vertical mullions (full height)
       for (const frac of [-0.25, 0, 0.25]) {
-        bx(g, 0.12, glassH, 0.12, mullionX, gCY, glassZ + glassW * frac, dkM(), 'detail');
+        bx(g, 0.14, glassH, 0.14, mullionX, gCY, glassZ + glassW * frac, dkM(), 'detail');
       }
-      // Two horizontal transoms
-      bx(g, 0.12, 0.12, glassW, mullionX, gBot + glassH * 0.55, glassZ, dkM(), 'detail');
-      bx(g, 0.12, 0.12, glassW, mullionX, gBot + glassH * 0.78, glassZ, dkM(), 'detail');
-      // Diagonal tracery in upper portion (2 X-crosses between top transom and lintel)
-      for (const zHalf of [-0.25, 0.25]) {
-        const tzC = glassZ + glassW * zHalf;
-        const subW = glassW * 0.22;
-        bx(g, 0.08, glassH * 0.18, 0.08, mullionX, gBot + glassH * 0.89, tzC - subW * 0.3, dkM(), 'detail');
-        bx(g, 0.08, glassH * 0.18, 0.08, mullionX, gBot + glassH * 0.89, tzC + subW * 0.3, dkM(), 'detail');
-      }
+      // 2 horizontal transoms (stop short of window edges to avoid overlap with wall)
+      const tranW = glassW * 0.88;
+      bx(g, 0.14, 0.14, tranW, mullionX, gBot + glassH * 0.55, glassZ, dkM(), 'detail');
+      bx(g, 0.14, 0.14, tranW, mullionX, gBot + glassH * 0.78, glassZ, dkM(), 'detail');
 
       // Sill + hood mold
       bx(g, W + 0.25, 0.2, glassW + 0.5, wallCX, gBot - 0.1, glassZ, dkM(), 'detail');
