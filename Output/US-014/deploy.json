@@ -1,0 +1,1 @@
+{"decision":"pass","gates_checked":["lint","typecheck","tests","e2e"],"failures":[],"notes":"All 4 quality gates pass. Lint: clean. Typecheck: clean. Unit tests: 21 files, 303 tests passed. E2E: 47 tests passed (initial run had transient connection-refused errors from dev server crash; clean retry passed all 47)."}
