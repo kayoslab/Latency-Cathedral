@@ -120,7 +120,7 @@ export function buildCathedralGeometry(params: SceneParams): Group {
   const nBack = nD / 2;           // nave back (east)
 
   // ── Ground ──
-  const gnd = new Mesh(new PlaneGeometry(400, 400), new MeshStandardMaterial({ color: 0xc5c0b8, roughness: 0.95 }));
+  const gnd = new Mesh(new PlaneGeometry(1200, 1200), new MeshStandardMaterial({ color: 0xc5c0b8, roughness: 0.95 }));
   gnd.rotation.x = -Math.PI / 2; gnd.receiveShadow = true; gnd.userData.tier = 'ground'; g.add(gnd);
 
   // ── Foundation ──

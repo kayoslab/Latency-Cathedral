@@ -99,42 +99,49 @@ export function computeDayNight(timeOfDay: number): DayNightState {
   };
 }
 
-/** Create star field + moon group. Only visible at night. */
+/** Create star field + moon + sun disc. */
 export function createSkyObjects(): Group {
   const group = new Group();
 
-  // Stars: random points on a large sphere
-  const starCount = 800;
+  // Stars: random points on upper hemisphere
+  const starCount = 1000;
   const starPositions = new Float32Array(starCount * 3);
   for (let i = 0; i < starCount; i++) {
     const theta = Math.random() * Math.PI * 2;
-    const phi = Math.acos(2 * Math.random() - 1);
-    const r = 280 + Math.random() * 20;
+    const phi = Math.acos(Math.random()); // upper hemisphere only
+    const r = 450 + Math.random() * 30;
     starPositions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-    starPositions[i * 3 + 1] = Math.abs(r * Math.cos(phi)); // only upper hemisphere
+    starPositions[i * 3 + 1] = r * Math.cos(phi);
     starPositions[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
   }
   const starGeo = new BufferGeometry();
   starGeo.setAttribute('position', new Float32BufferAttribute(starPositions, 3));
-  const starMat = new PointsMaterial({ color: 0xffffff, size: 0.8, sizeAttenuation: true });
+  const starMat = new PointsMaterial({ color: 0xffffff, size: 1.0, sizeAttenuation: true });
   const stars = new Points(starGeo, starMat);
   stars.userData._skyObj = 'stars';
   group.add(stars);
 
-  // Moon: small glowing sphere
-  const moonGeo = new SphereGeometry(3, 16, 16);
+  // Moon
+  const moonGeo = new SphereGeometry(5, 16, 16);
   const moonMat = new MeshBasicMaterial({ color: 0xeeeedd });
   const moon = new Mesh(moonGeo, moonMat);
-  moon.position.set(-120, 100, -80);
+  moon.position.set(-200, 160, -120);
   moon.userData._skyObj = 'moon';
   group.add(moon);
+
+  // Sun disc — bright glowing sphere that tracks the directional light position
+  const sunGeo = new SphereGeometry(12, 24, 24);
+  const sunMat = new MeshBasicMaterial({ color: 0xffeecc });
+  const sunDisc = new Mesh(sunGeo, sunMat);
+  sunDisc.userData._skyObj = 'sun';
+  group.add(sunDisc);
 
   return group;
 }
 
-/** Update sky object visibility + star brightness based on sun intensity. */
-export function updateSkyObjects(group: Group, sun: number): void {
-  const nightFade = Math.max(0, 1 - sun * 2); // visible below 0.5 sun
+/** Update sky object visibility, positions, and brightness. */
+export function updateSkyObjects(group: Group, sun: number, state: DayNightState): void {
+  const nightFade = Math.max(0, 1 - sun * 2);
 
   group.traverse((obj) => {
     if (obj.userData._skyObj === 'stars') {
@@ -148,6 +155,20 @@ export function updateSkyObjects(group: Group, sun: number): void {
       const mat = (obj as Mesh).material as MeshBasicMaterial;
       mat.opacity = nightFade;
       mat.transparent = true;
+    }
+    if (obj.userData._skyObj === 'sun') {
+      // Position sun disc far away in the direction of the directional light
+      const scale = 4.5; // push it far toward the horizon
+      obj.position.set(state.sunX * scale, state.sunY * scale, state.sunZ * scale);
+      obj.visible = state.sunY > 2; // hide when below horizon
+
+      // Color: white-yellow at noon, deep orange at sunrise/sunset
+      const mat = (obj as Mesh).material as MeshBasicMaterial;
+      if (sun > 0.5) {
+        mat.color.setHex(0xfff8e0);
+      } else if (sun > 0) {
+        mat.color.lerpColors(new Color(0xff6622), new Color(0xfff8e0), sun * 2);
+      }
     }
   });
 }

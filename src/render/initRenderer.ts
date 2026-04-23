@@ -120,7 +120,7 @@ export function initRenderer(canvas: HTMLCanvasElement): RendererHandle {
       // Day/night cycle
       const tod = timeOverride ?? getTimeOfDay();
       const dayNight = computeDayNight(tod);
-      updateSkyObjects(skyObjects, dayNight.sunIntensity);
+      updateSkyObjects(skyObjects, dayNight.sunIntensity, dayNight);
 
       // Atmosphere: cheap, every frame
       applyAtmosphere(scene, lights,
@@ -179,7 +179,7 @@ export function initRenderer(canvas: HTMLCanvasElement): RendererHandle {
         lastShapeParams = { height: params.height, symmetry: params.symmetry };
         lastRuinKey = ruinKey(params);
         const dn = computeDayNight(timeOverride ?? getTimeOfDay());
-        updateSkyObjects(skyObjects, dn.sunIntensity);
+        updateSkyObjects(skyObjects, dn.sunIntensity, dn);
         applyAtmosphere(scene, lights, { fog: params.fog, lightIntensity: params.lightIntensity }, dn);
       }
     },

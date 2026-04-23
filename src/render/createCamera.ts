@@ -9,7 +9,7 @@ const MIN_POLAR_ANGLE = 0.2;            // don't look from directly above
 const MAX_POLAR_ANGLE = Math.PI / 2 - 0.08; // don't go below ground
 
 export function createCamera(width: number, height: number): PerspectiveCamera {
-  const camera = new PerspectiveCamera(32, width / height, 1, 700);
+  const camera = new PerspectiveCamera(32, width / height, 1, 1200);
   camera.position.set(0, CAMERA_HEIGHT, ORBIT_RADIUS);
   camera.lookAt(CAMERA_TARGET);
   return camera;
