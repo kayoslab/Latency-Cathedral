@@ -53,6 +53,8 @@ function applySnapshot(snapshot: import('./domain/types').NetworkSnapshot): void
   const sceneParams = mapSnapshotToScene(snapshot);
   debugHud.update(snapshot, sceneParams);
   renderer.update(sceneParams);
+  // Pass time override to renderer (null = use real clock)
+  renderer.setTimeOverride(debugSlider.getTimeOverride());
 }
 
 // Initial render

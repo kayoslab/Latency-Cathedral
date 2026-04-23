@@ -27,6 +27,18 @@ vi.mock('three/examples/jsm/controls/OrbitControls.js', () => ({
     return { target: { copy: vi.fn() }, autoRotate: false, autoRotateSpeed: 0, minPolarAngle: 0, maxPolarAngle: Math.PI, minDistance: 0, maxDistance: Infinity, enableDamping: false, dampingFactor: 0, enablePan: true, update: vi.fn(), dispose: vi.fn() };
   }),
 }));
+vi.mock('../../src/render/dayNight', () => ({
+  getTimeOfDay: vi.fn(() => 0.5),
+  computeDayNight: vi.fn(() => ({
+    timeOfDay: 0.5, sunIntensity: 1, sunX: 0, sunY: 100, sunZ: 40,
+    skyColor: { r: 0.8, g: 0.8, b: 0.78, copy: vi.fn(), lerp: vi.fn(), lerpColors: vi.fn() },
+    fogColor: { r: 0.8, g: 0.8, b: 0.77, copy: vi.fn(), lerp: vi.fn(), lerpColors: vi.fn() },
+    groundColor: { r: 0.77, g: 0.75, b: 0.72 },
+    interiorGlow: 0.3,
+  })),
+  createSkyObjects: vi.fn(() => ({ traverse: vi.fn(), children: [] })),
+  updateSkyObjects: vi.fn(),
+}));
 vi.mock('../../src/render/stoneTexture', () => ({
   createStoneTextures: vi.fn(() => ({ color: {}, normal: {}, roughness: {} })),
   createRoofNormalMap: vi.fn(() => ({})),
@@ -39,7 +51,7 @@ vi.mock('../../src/render/buildCathedralGeometry', async (importOriginal) => {
 vi.mock('three', () => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const Color = vi.fn(function Color(_hex?: number) {
-    return { r: 0, g: 0, b: 0, lerpColors: vi.fn() };
+    return { r: 0, g: 0, b: 0, copy: vi.fn().mockReturnThis(), lerp: vi.fn().mockReturnThis(), lerpColors: vi.fn().mockReturnThis(), setHex: vi.fn().mockReturnThis() };
   });
 
   const Fog = vi.fn(function Fog(_color: number, near: number, far: number) {
@@ -89,20 +101,22 @@ vi.mock('three', () => {
     };
   });
 
+  const mc = () => ({ r: 0.5, g: 0.5, b: 0.5, copy: vi.fn().mockReturnThis(), lerp: vi.fn().mockReturnThis(), lerpColors: vi.fn().mockReturnThis(), setHex: vi.fn().mockReturnThis() });
+
   const AmbientLight = vi.fn(function AmbientLight(_color?: number, intensity?: number) {
-    return { intensity: intensity ?? 1, isLight: true };
+    return { intensity: intensity ?? 1, isLight: true, color: mc() };
   });
 
   const DirectionalLight = vi.fn(function DirectionalLight(_color?: number, intensity?: number) {
-    return { intensity: intensity ?? 1, position: { set: vi.fn() }, isLight: true, castShadow: false, shadow: { mapSize: { width: 0, height: 0 }, camera: { near: 0, far: 0, left: 0, right: 0, top: 0, bottom: 0 } } };
+    return { intensity: intensity ?? 1, position: { set: vi.fn(), x: 0, y: 0, z: 0 }, isLight: true, color: mc(), castShadow: false, shadow: { mapSize: { width: 0, height: 0 }, camera: { near: 0, far: 0, left: 0, right: 0, top: 0, bottom: 0 } } };
   });
 
   const PointLight = vi.fn(function PointLight(_color?: number, intensity?: number) {
-    return { intensity: intensity ?? 1, position: { set: vi.fn() }, isLight: true };
+    return { intensity: intensity ?? 1, position: { set: vi.fn() }, isLight: true, color: mc() };
   });
 
   const HemisphereLight = vi.fn(function HemisphereLight(_skyColor?: number, _groundColor?: number, intensity?: number) {
-    return { intensity: intensity ?? 1, isLight: true };
+    return { intensity: intensity ?? 1, isLight: true, color: mc(), groundColor: mc() };
   });
 
   const makeTrackedGeo = (type: string) => vi.fn(function Geo() {

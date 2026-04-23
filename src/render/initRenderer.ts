@@ -13,10 +13,12 @@ import { rebuildCathedral } from './rebuildCathedral';
 import { applyAtmosphere } from './applyAtmosphere';
 import { setTextures } from './buildCathedralGeometry';
 import { createStoneTextures, createRoofNormalMap } from './stoneTexture';
+import { getTimeOfDay, computeDayNight, createSkyObjects, updateSkyObjects } from './dayNight';
 
 export interface RendererHandle {
   dispose: () => void;
   update: (params: SceneParams) => void;
+  setTimeOverride: (t: number | null) => void;
 }
 
 function lerp(a: number, b: number, t: number): number {
@@ -52,6 +54,13 @@ export function initRenderer(canvas: HTMLCanvasElement): RendererHandle {
 
   // Camera controls (mouse drag + touch)
   const cameraControls = createCameraControls(camera, renderer.domElement);
+
+  // Sky objects (stars + moon)
+  const skyObjects = createSkyObjects();
+  scene.add(skyObjects);
+
+  // Time override for debug slider (null = use real clock)
+  let timeOverride: number | null = null;
 
   // Post-processing
   const composer = new EffectComposer(renderer);
@@ -108,11 +117,16 @@ export function initRenderer(canvas: HTMLCanvasElement): RendererHandle {
     if (targetParams && currentParams) {
       currentParams = lerpParams(currentParams, targetParams, 0.04);
 
+      // Day/night cycle
+      const tod = timeOverride ?? getTimeOfDay();
+      const dayNight = computeDayNight(tod);
+      updateSkyObjects(skyObjects, dayNight.sunIntensity);
+
       // Atmosphere: cheap, every frame
-      applyAtmosphere(scene, lights, {
-        fog: currentParams.fog,
-        lightIntensity: currentParams.lightIntensity,
-      });
+      applyAtmosphere(scene, lights,
+        { fog: currentParams.fog, lightIntensity: currentParams.lightIntensity },
+        dayNight,
+      );
 
       // Geometry rebuild: only when height or symmetry change significantly
       if (needsShapeRebuild(currentParams)) {
@@ -164,8 +178,14 @@ export function initRenderer(canvas: HTMLCanvasElement): RendererHandle {
         cathedral = rebuildCathedral(scene, cathedral, params);
         lastShapeParams = { height: params.height, symmetry: params.symmetry };
         lastRuinKey = ruinKey(params);
-        applyAtmosphere(scene, lights, { fog: params.fog, lightIntensity: params.lightIntensity });
+        const dn = computeDayNight(timeOverride ?? getTimeOfDay());
+        updateSkyObjects(skyObjects, dn.sunIntensity);
+        applyAtmosphere(scene, lights, { fog: params.fog, lightIntensity: params.lightIntensity }, dn);
       }
+    },
+
+    setTimeOverride(t: number | null) {
+      timeOverride = t;
     },
 
     dispose() {

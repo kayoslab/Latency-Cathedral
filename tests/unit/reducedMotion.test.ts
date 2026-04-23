@@ -30,6 +30,18 @@ vi.mock('three/examples/jsm/controls/OrbitControls.js', () => ({
     return { target: { copy: vi.fn() }, autoRotate: false, autoRotateSpeed: 0, minPolarAngle: 0, maxPolarAngle: Math.PI, minDistance: 0, maxDistance: Infinity, enableDamping: false, dampingFactor: 0, enablePan: true, update: vi.fn(), dispose: vi.fn() };
   }),
 }));
+vi.mock('../../src/render/dayNight', () => ({
+  getTimeOfDay: vi.fn(() => 0.5),
+  computeDayNight: vi.fn(() => ({
+    timeOfDay: 0.5, sunIntensity: 1, sunX: 0, sunY: 100, sunZ: 40,
+    skyColor: { r: 0.8, g: 0.8, b: 0.78, copy: vi.fn(), lerp: vi.fn(), lerpColors: vi.fn() },
+    fogColor: { r: 0.8, g: 0.8, b: 0.77, copy: vi.fn(), lerp: vi.fn(), lerpColors: vi.fn() },
+    groundColor: { r: 0.77, g: 0.75, b: 0.72 },
+    interiorGlow: 0.3,
+  })),
+  createSkyObjects: vi.fn(() => ({ traverse: vi.fn(), children: [] })),
+  updateSkyObjects: vi.fn(),
+}));
 vi.mock('../../src/render/stoneTexture', () => ({
   createStoneTextures: vi.fn(() => ({ color: {}, normal: {}, roughness: {} })),
   createRoofNormalMap: vi.fn(() => ({})),

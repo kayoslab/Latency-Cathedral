@@ -23,6 +23,18 @@ vi.mock('three/examples/jsm/controls/OrbitControls.js', () => ({
     return { target: { copy: vi.fn() }, autoRotate: false, autoRotateSpeed: 0, minPolarAngle: 0, maxPolarAngle: Math.PI, minDistance: 0, maxDistance: Infinity, enableDamping: false, dampingFactor: 0, enablePan: true, update: vi.fn(), dispose: vi.fn() };
   }),
 }));
+vi.mock('../../src/render/dayNight', () => ({
+  getTimeOfDay: vi.fn(() => 0.5),
+  computeDayNight: vi.fn(() => ({
+    timeOfDay: 0.5, sunIntensity: 1, sunX: 0, sunY: 100, sunZ: 40,
+    skyColor: { r: 0.8, g: 0.8, b: 0.78, copy: vi.fn(), lerp: vi.fn(), lerpColors: vi.fn() },
+    fogColor: { r: 0.8, g: 0.8, b: 0.77, copy: vi.fn(), lerp: vi.fn(), lerpColors: vi.fn() },
+    groundColor: { r: 0.77, g: 0.75, b: 0.72 },
+    interiorGlow: 0.3,
+  })),
+  createSkyObjects: vi.fn(() => ({ traverse: vi.fn(), children: [] })),
+  updateSkyObjects: vi.fn(),
+}));
 vi.mock('../../src/render/stoneTexture', () => ({
   createStoneTextures: vi.fn(() => ({ color: {}, normal: {}, roughness: {} })),
   createRoofNormalMap: vi.fn(() => ({})),
@@ -34,11 +46,14 @@ vi.mock('../../src/render/buildCathedralGeometry', async (importOriginal) => {
 
 // Track rebuild calls via Group constructor invocations
 vi.mock('three', () => {
-  const Color = vi.fn(function Color(this: { r: number; g: number; b: number }, hex?: number) {
+  const Color = vi.fn(function Color(this: Record<string, unknown>, hex?: number) {
     this.r = ((hex ?? 0) >> 16 & 0xff) / 255;
     this.g = ((hex ?? 0) >> 8 & 0xff) / 255;
     this.b = ((hex ?? 0) & 0xff) / 255;
   });
+  Color.prototype.copy = vi.fn(function copy(this: Record<string, unknown>, c: Record<string, unknown>) { this.r = c.r; this.g = c.g; this.b = c.b; return this; });
+  Color.prototype.lerp = vi.fn(function lerp(this: Record<string, unknown>) { return this; });
+  Color.prototype.setHex = vi.fn(function setHex(this: Record<string, unknown>) { return this; });
   Color.prototype.lerpColors = vi.fn(function lerpColors(
     this: { r: number; g: number; b: number },
     a: { r: number; g: number; b: number },
@@ -99,28 +114,26 @@ vi.mock('three', () => {
     };
   });
 
-  const AmbientLight = vi.fn(function AmbientLight(this: { intensity: number; isLight: boolean }, _color?: number, intensity?: number) {
-    this.intensity = intensity ?? 1;
-    this.isLight = true;
+  const mockColor = () => ({ r: 0.5, g: 0.5, b: 0.5, copy: vi.fn().mockReturnThis(), lerp: vi.fn().mockReturnThis(), lerpColors: vi.fn().mockReturnThis(), setHex: vi.fn().mockReturnThis() });
+
+  const AmbientLight = vi.fn(function AmbientLight(this: Record<string, unknown>, _color?: number, intensity?: number) {
+    this.intensity = intensity ?? 1; this.isLight = true; this.color = mockColor();
   });
 
-  const DirectionalLight = vi.fn(function DirectionalLight(this: { intensity: number; isLight: boolean; position: { set: ReturnType<typeof vi.fn> } }, _color?: number, intensity?: number) {
-    this.intensity = intensity ?? 1;
-    this.isLight = true;
+  const DirectionalLight = vi.fn(function DirectionalLight(this: Record<string, unknown>, _color?: number, intensity?: number) {
+    this.intensity = intensity ?? 1; this.isLight = true; this.color = mockColor();
+    this.position = { set: vi.fn(), x: 0, y: 0, z: 0 };
+    this.castShadow = false;
+    this.shadow = { mapSize: { width: 0, height: 0 }, camera: { near: 0, far: 0, left: 0, right: 0, top: 0, bottom: 0 } };
+  });
+
+  const PointLight = vi.fn(function PointLight(this: Record<string, unknown>, _color?: number, intensity?: number) {
+    this.intensity = intensity ?? 1; this.isLight = true; this.color = mockColor();
     this.position = { set: vi.fn() };
-    (this as unknown as { castShadow: boolean }).castShadow = false;
-    (this as unknown as { shadow: unknown }).shadow = { mapSize: { width: 0, height: 0 }, camera: { near: 0, far: 0, left: 0, right: 0, top: 0, bottom: 0 } };
   });
 
-  const PointLight = vi.fn(function PointLight(this: { intensity: number; isLight: boolean; position: { set: ReturnType<typeof vi.fn> } }, _color?: number, intensity?: number) {
-    this.intensity = intensity ?? 1;
-    this.isLight = true;
-    this.position = { set: vi.fn() };
-  });
-
-  const HemisphereLight = vi.fn(function HemisphereLight(this: { intensity: number; isLight: boolean }, _skyColor?: number, _groundColor?: number, intensity?: number) {
-    this.intensity = intensity ?? 1;
-    this.isLight = true;
+  const HemisphereLight = vi.fn(function HemisphereLight(this: Record<string, unknown>, _skyColor?: number, _groundColor?: number, intensity?: number) {
+    this.intensity = intensity ?? 1; this.isLight = true; this.color = mockColor(); this.groundColor = mockColor();
   });
 
   const makeGeo = (type: string) => vi.fn(function Geo() {
