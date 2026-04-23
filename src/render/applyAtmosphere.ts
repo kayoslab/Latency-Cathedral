@@ -12,7 +12,7 @@ export interface AtmosphereParams {
 const FOG_NEAR_DAY = 200;
 const FOG_NEAR_NIGHT = 120;
 const FOG_FAR_DAY = 600;
-const FOG_FAR_NIGHT = 350;
+const FOG_FAR_NIGHT = 500;
 
 // Degradation fog close-in
 const FOG_NEAR_DEGRADED = 80;
@@ -64,13 +64,14 @@ export function applyAtmosphere(
   lights.ambient.intensity = ambientDay * sunIntensity + ambientNight * (1 - sunIntensity);
   lights.ambient.color.lerpColors(new Color(0x223344), new Color(0xeeeeff), sunIntensity);
 
-  // ── Rim (moon light at night, fill during day) ──
-  const moonIntensity = (1 - sunIntensity) * 0.25;
+  // ── Rim / moonlight ──
+  // At night: strong cool moonlight. During day: subtle fill.
+  const moonIntensity = (1 - sunIntensity) * 0.6;
   lights.rim.intensity = sunIntensity * (0.05 + lightIntensity * 0.35) + moonIntensity;
-  lights.rim.color.lerpColors(new Color(0x8899cc), new Color(0x8899bb), sunIntensity);
-  // Moon position (opposite the sun arc roughly)
+  lights.rim.color.lerpColors(new Color(0x6688bb), new Color(0x8899bb), sunIntensity);
+  // Moon position: opposite the sun, high in the sky
   if (sunIntensity < 0.5) {
-    lights.rim.position.set(-sunX * 0.8, Math.max(30, 100 - sunY), -sunZ);
+    lights.rim.position.set(-sunX * 0.8, Math.max(60, 120 - sunY), -sunZ);
   }
 
   // ── Interior glow ──
